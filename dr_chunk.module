@@ -1,0 +1,223 @@
+<?php
+
+/**
+ * @file
+ *  Decoder Ring module for text chunk tagging
+ *
+ * @todo Render selections on node view page
+ * @todo Reset cursor after tagging a chunk
+ */
+
+
+/**
+ * Implementation of hook_wysiwyg_include_directory().
+ */
+function dr_chunk_wysiwyg_include_directory($type) {
+  if ($type == 'plugins') {
+    return 'plugins';
+  }
+}
+
+
+/**
+ * Implementation of hook_menu().
+ */
+function dr_chunk_menu() {
+  $items = array();
+  // Node chunk edit JS callback
+  $items['dr-chunk/node/%node'] = array(
+    'page callback' => 'dr_node_chunk_js',
+    'page arguments' => array(1),
+    'access callback' => 'node_access',
+    'access arguments' => array('update', 1),
+    'type' => MENU_LOCAL_TASK,
+  );
+  // Comment chunk edit JS callback
+  $items['dr-chunk/comment/%_comment'] = array(
+    'page callback' => 'dr_comment_chunk_js',
+    'page arguments' => array(1),
+    'access callback' => 'comment_access',
+    'access arguments' => array('edit', 1),
+    'type' => MENU_LOCAL_TASK,
+  );
+  return $items;
+}
+
+/**
+ * Implementation of hook_nodeapi().
+ */
+function dr_chunk_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
+  if ($op == 'prepare') {
+    // Showing the node, so load up all terms and prep the JS interface
+    dr_chunk_prepare_tagging();
+  }
+  
+  if ($op == 'update' || $op == 'insert') {
+    $terms = dr_chunk_match_terms($node->body);
+    dr_chunk_save_item_terms('node', $node->nid, $terms);
+  }
+}
+
+function dr_chunk_match_terms($text) {
+  $tids = array();
+  preg_match_all('/taxonomy\-term\-[0-9]{1,5}/', $text, $matches, PREG_OFFSET_CAPTURE);
+  if ($matches && count($matches[0])) {
+    foreach ($matches[0] as $match) {
+      $tid = (int)preg_replace('/taxonomy\-term\-/', '', $match[0]);
+      if (is_numeric($tid)) {
+        $tids[] = array(
+          'tid' => $tid,
+          'start' => $match[1] ? $match[1] : 0,
+        );
+      }
+    }
+  }
+  return $tids;
+}
+
+function dr_chunk_save_item_terms($type, $id, $terms = array()) {
+  // Delete existing terms
+  $sql = "DELETE FROM {term_chunk} WHERE type = '%s' AND id = %d";
+  db_query($sql, $type, $id);
+  // Add new terms
+  $sql = "INSERT INTO {term_chunk} (type, id, start, tid) VALUES ('%s', %d, %d, %d)";
+  foreach ($terms as $term) {
+    db_query($sql, $type, $id, $term['start'], $term['tid']);
+  }
+}
+
+function dr_chunk_prepare_tagging() {
+  static $processed = FALSE;
+  if (!$processed) {
+    dr_chunk_add_js_css();
+    $terms = dr_chunk_all_terms();
+    $js = array();
+    $js['dr']['terms'] = $terms;
+    drupal_add_js($js, 'setting');
+    $processed = TRUE;
+  }
+}
+
+/**
+ * Implementation of hook_comment().
+ */
+function dr_chunk_comment(&$comment, $op) {
+  if ($op == 'insert' || $op == 'update') {
+    $terms = dr_chunk_match_terms($comment['comment']);
+    dr_chunk_save_item_terms('comment', $comment['cid'], $terms);
+  }
+}
+
+/**
+ * Utility for adding the modules js and css
+ */
+function dr_chunk_add_js_css() {
+  $path = drupal_get_path('module', 'dr');
+  drupal_add_js($path .'/dr_chunk.js', 'module');
+  drupal_add_css($path .'/dr_chunk.css');
+}
+
+/**
+ * Implementation of hook_form_FORM_ID_alter().
+ */
+function dr_chunk_form_comment_form_alter(&$form, $form_state) {
+  dr_chunk_prepare_tagging();
+}
+
+/**
+ * Implementation of hook_form_FORM_ID_alter().
+ */
+function dr_chunk_form_taxonomy_form_term_alter(&$form, $form_state) {
+  $term = $form['#term'];
+
+  $base = drupal_get_path('module', 'dr_chunk');
+  $base_jq = drupal_get_path('module', 'jquery_update');
+
+  // Add Farbtastic color picker
+  drupal_add_css('misc/farbtastic/farbtastic.css', 'module', 'all', FALSE);
+  drupal_add_js($base_jq .'/replace/farbtastic.js');
+
+  // Add our JS
+  drupal_add_js($base .'/dr_chunk.js');
+
+  // Load saved colors
+  $colors = dr_chunk_term_colors($term['tid']);
+
+  // Alter the form
+  $form['advanced']['dr'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Text chunk colors'),
+    '#description' => t('Select colors to use when highlighting and tagging text with this term.'),
+    '#weight' => 10,
+  );
+  $form['advanced']['dr']['dr_save'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Save color selection'),
+    '#description' => t('Uncheck this option to clear the color selection and not consider this taxonomy term to be a "highlighted" term.'),
+    '#default_value' => $colors['has_color'],
+  );
+  $form['advanced']['dr']['dr_foreground'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Foreground color'),
+    '#default_value' => $colors['foreground'],
+    '#prefix' => '<div id="colorpicker-foreground"></div>',
+  );
+  $form['advanced']['dr']['dr_background'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Background color'),
+    '#default_value' => $colors['background'],
+    '#prefix' => '<div id="colorpicker-background"></div>',
+  );
+
+  // Add a submit handler
+  $form['#submit'][] = 'dr_chunk_taxonomy_form_submit';
+}
+
+/**
+ * Form submit callback
+ */
+function dr_chunk_taxonomy_form_submit($form, &$form_state) {
+  $tid = $form_state['values']['tid'];
+  $fore = $form_state['values']['dr_foreground'];
+  $back = $form_state['values']['dr_background'];
+
+  // Clear existing colors
+  $sql = "DELETE FROM {term_color} WHERE tid = %d";
+  db_query($sql, $tid);
+
+  // Add the new colors
+  if ($form_state['values']['dr_save']) {
+    $sql = "INSERT INTO {term_color} (tid, background, foreground) VALUES (%d, '%s', '%s')";
+    db_query($sql, $tid, $back, $fore);
+  }
+}
+
+/**
+ * Get colors for a specified term
+ */
+function dr_chunk_term_colors($tid) {
+  $colors = array('background' => '', 'foreground' => '', 'has_color' => FALSE);
+  $sql = "SELECT background, foreground FROM {term_color} WHERE tid = %d";
+  $result = db_query($sql, $tid);
+  while ($row = db_fetch_array($result)) {
+    $colors = $row;
+    $colors['has_color'] = TRUE;
+  }
+  return $colors;
+}
+
+/**
+ * Get all the saved term colors
+ */
+function dr_chunk_all_terms() {
+  $terms = array();
+  $sql = "SELECT tc.tid, tc.background, tc.foreground, td.name
+          FROM {term_color} tc
+          LEFT JOIN {term_data} td ON tc.tid = td.tid
+          ORDER BY td.weight, td.name";
+  $result = db_query($sql);
+  while ($row = db_fetch_array($result)) {
+    $terms[$row['tid']] = $row;
+  }
+  return $terms;
+}

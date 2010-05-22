@@ -1,0 +1,85 @@
+Formatting data for import into /Decoder Ring/
+
+This document defines the fields required to perform a content import from an external source. If the content is being delivered as a database dump or collection of CSVs, follow this guide to determine file format and structure. "Keys" for each field don't have to be named in accordance to this document, this is simply a guide to naming conventions.
+
+Common terms used in this document:
+- boolean: A binary value, i.e. 1/0, true/false, yes/no
+
+Data formatting:
+- Dates are easiest to handle if given in Unix timestamp format, but can be parsed out of any string formatted such that PHP's [[http://php.net/manual/en/function.strtotime.php][strtotime]] method can parse it.
+
+* Users
+User accounts. The three fields /id/, /name/, and /mail/ are not required, but at least one must be supplied. If one of the three fields has data, that data must be unique. The /user\_id/ value for Nodes and Comments must match one of these fields.
+
+** id
+A unique identifier for this user (i.e. "1234"). If not supplied, one will be generated.
+
+** name
+A unique username for this user. If not supplied, one will be generated.
+
+** mail
+The email address for this user.
+
+** created /(optional)/
+The date this user account was created.
+
+* Nodes 
+Also called "posts." The initial post in a thread.
+
+** id /(required)/
+Unique identifier of the post
+
+** user\_id /(required)/
+The unique ID or username of the user that created the post
+
+** created /(optional, but desired)/
+The creation date of the post
+
+** updated /(optional)/
+The date the post was last updated
+
+** published /(optional)/
+A boolean that defines whether or not the post is visible to normal users, on the site.
+
+** sticky /(optional)/
+A boolean that defines whether or not the post is anchored to the top of content listings. An example of this would be posts defining forum etiquette guidelines that displays at the top of a particular forum page.
+
+** title /(optional)/
+The title of the post
+
+** body /(required)/
+The body text of the post
+* Comments
+Any post to a thread that comes after the initial post
+
+** id /(required)/
+Unique identifier of the comment.
+
+** parent\_id /(optional)/
+Some online discussion software supports threaded comments. Parent ID is the unique identifier of the parent comment.
+
+** node\_id /(required)/
+The unique identifier of the node to which this comment is attached.
+
+** user\_id /(required)/
+The unique identifier of the user that posted this comment.
+
+** title /(optional)/
+The title of this comment.
+
+** body /(required)/
+The body text of this comment.
+
+** created /(optional, but desired)/
+The date upon which this comment was created.
+* Taxonomy
+This data is not required, but if supplied it can be used to pre-populate taxonomies used for tagging content.
+
+** name /(required)/
+The taxonomy term.
+
+** description /(optional)/
+A longer description of the taxonomy term.
+
+** vocabulary /(required)/
+A name for the vocabulary in which this taxonomy term resides. For example, the term "Scarlet Robin" is in the vocabulary "Birds"

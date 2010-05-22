@@ -1,0 +1,394 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+               "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+lang="en" xml:lang="en">
+<head>
+<title>Formatting data for import into <i>Decoder Ring</i></title>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
+<meta name="generator" content="Org-mode"/>
+<meta name="generated" content="2010-02-20 10:10:03 MST"/>
+<meta name="author" content="Jeff Beeman"/>
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  html { font-family: Times, serif; font-size: 12pt; }
+  .title  { text-align: center; }
+  .todo   { color: red; }
+  .done   { color: green; }
+  .tag    { background-color:lightblue; font-weight:normal }
+  .target { }
+  .timestamp { color: grey }
+  .timestamp-kwd { color: CadetBlue }
+  p.verse { margin-left: 3% }
+  pre {
+	border: 1pt solid #AEBDCC;
+	background-color: #F3F5F7;
+	padding: 5pt;
+	font-family: courier, monospace;
+        font-size: 90%;
+        overflow:auto;
+  }
+  table { border-collapse: collapse; }
+  td, th { vertical-align: top; }
+  dt { font-weight: bold; }
+  div.figure { padding: 0.5em; }
+  div.figure p { text-align: center; }
+  .linenr { font-size:smaller }
+  .code-highlighted {background-color:#ffff00;}
+  .org-info-js_info-navigation { border-style:none; }
+  #org-info-js_console-label { font-size:10px; font-weight:bold;
+                               white-space:nowrap; }
+  .org-info-js_search-highlight {background-color:#ffff00; color:#000000;
+                                 font-weight:bold; }
+  /*]]>*/-->
+</style>
+<script type="text/javascript">
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*/-->
+</script>
+</head><body>
+<h1 class="title">Formatting data for import into <i>Decoder Ring</i></h1>
+
+<p>This document defines the fields required to perform a content import from an external source. If the content is being delivered as a database dump or collection of CSVs, follow this guide to determine file format and structure. "Keys" for each field don't have to be named in accordance to this document, this is simply a guide to naming conventions.
+</p>
+<p>
+Common terms used in this document:
+</p><ul>
+<li>
+boolean: A binary value, i.e. 1/0, true/false, yes/no
+
+</li>
+</ul>
+
+<p>Data formatting:
+</p><ul>
+<li>
+Dates are easiest to handle if given in Unix timestamp format, but can be parsed out of any string formatted such that PHP's <a href="http://php.net/manual/en/function.strtotime.php">strtotime</a> method can parse it.
+
+</li>
+</ul>
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#sec-1">1 Users </a>
+<ul>
+<li><a href="#sec-1.1">1.1 id </a></li>
+<li><a href="#sec-1.2">1.2 name </a></li>
+<li><a href="#sec-1.3">1.3 mail </a></li>
+<li><a href="#sec-1.4">1.4 created <i>(optional)</i> </a></li>
+</ul>
+</li>
+<li><a href="#sec-2">2 Nodes </a>
+<ul>
+<li><a href="#sec-2.1">2.1 id <i>(required)</i> </a></li>
+<li><a href="#sec-2.2">2.2 user_id <i>(required)</i> </a></li>
+<li><a href="#sec-2.3">2.3 created <i>(optional, but desired)</i> </a></li>
+<li><a href="#sec-2.4">2.4 updated <i>(optional)</i> </a></li>
+<li><a href="#sec-2.5">2.5 published <i>(optional)</i> </a></li>
+<li><a href="#sec-2.6">2.6 sticky <i>(optional)</i> </a></li>
+<li><a href="#sec-2.7">2.7 title <i>(optional)</i> </a></li>
+<li><a href="#sec-2.8">2.8 body <i>(required)</i> </a></li>
+</ul>
+</li>
+<li><a href="#sec-3">3 Comments </a>
+<ul>
+<li><a href="#sec-3.1">3.1 id <i>(required)</i> </a></li>
+<li><a href="#sec-3.2">3.2 parent_id <i>(optional)</i> </a></li>
+<li><a href="#sec-3.3">3.3 node_id <i>(required)</i> </a></li>
+<li><a href="#sec-3.4">3.4 user_id <i>(required)</i> </a></li>
+<li><a href="#sec-3.5">3.5 title <i>(optional)</i> </a></li>
+<li><a href="#sec-3.6">3.6 body <i>(required)</i> </a></li>
+<li><a href="#sec-3.7">3.7 created <i>(optional, but desired)</i> </a></li>
+</ul>
+</li>
+<li><a href="#sec-4">4 Taxonomy </a>
+<ul>
+<li><a href="#sec-4.1">4.1 name <i>(required)</i> </a></li>
+<li><a href="#sec-4.2">4.2 description <i>(optional)</i> </a></li>
+<li><a href="#sec-4.3">4.3 vocabulary <i>(required)</i> </a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-1" class="outline-2">
+<h2 id="sec-1">1 Users </h2>
+<div id="text-1">
+
+<p>User accounts. The three fields <i>id</i>, <i>name</i>, and <i>mail</i> are not required, but at least one must be supplied. If one of the three fields has data, that data must be unique. The <i>user_id</i> value for Nodes and Comments must match one of these fields.
+</p>
+
+</div>
+
+<div id="outline-container-1.1" class="outline-3">
+<h3 id="sec-1.1">1.1 id </h3>
+<div id="text-1.1">
+
+<p>A unique identifier for this user (i.e. "1234"). If not supplied, one will be generated.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-1.2" class="outline-3">
+<h3 id="sec-1.2">1.2 name </h3>
+<div id="text-1.2">
+
+<p>A unique username for this user. If not supplied, one will be generated.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-1.3" class="outline-3">
+<h3 id="sec-1.3">1.3 mail </h3>
+<div id="text-1.3">
+
+<p>The email address for this user.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-1.4" class="outline-3">
+<h3 id="sec-1.4">1.4 created <i>(optional)</i> </h3>
+<div id="text-1.4">
+
+<p>The date this user account was created.
+</p>
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-2" class="outline-2">
+<h2 id="sec-2">2 Nodes </h2>
+<div id="text-2">
+
+<p>Also called "posts." The initial post in a thread.
+</p>
+
+</div>
+
+<div id="outline-container-2.1" class="outline-3">
+<h3 id="sec-2.1">2.1 id <i>(required)</i> </h3>
+<div id="text-2.1">
+
+<p>Unique identifier of the post
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-2.2" class="outline-3">
+<h3 id="sec-2.2">2.2 user_id <i>(required)</i> </h3>
+<div id="text-2.2">
+
+<p>The unique ID or username of the user that created the post
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-2.3" class="outline-3">
+<h3 id="sec-2.3">2.3 created <i>(optional, but desired)</i> </h3>
+<div id="text-2.3">
+
+<p>The creation date of the post
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-2.4" class="outline-3">
+<h3 id="sec-2.4">2.4 updated <i>(optional)</i> </h3>
+<div id="text-2.4">
+
+<p>The date the post was last updated
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-2.5" class="outline-3">
+<h3 id="sec-2.5">2.5 published <i>(optional)</i> </h3>
+<div id="text-2.5">
+
+<p>A boolean that defines whether or not the post is visible to normal users, on the site.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-2.6" class="outline-3">
+<h3 id="sec-2.6">2.6 sticky <i>(optional)</i> </h3>
+<div id="text-2.6">
+
+<p>A boolean that defines whether or not the post is anchored to the top of content listings. An example of this would be posts defining forum etiquette guidelines that displays at the top of a particular forum page.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-2.7" class="outline-3">
+<h3 id="sec-2.7">2.7 title <i>(optional)</i> </h3>
+<div id="text-2.7">
+
+<p>The title of the post
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-2.8" class="outline-3">
+<h3 id="sec-2.8">2.8 body <i>(required)</i> </h3>
+<div id="text-2.8">
+
+<p>The body text of the post
+</p></div>
+</div>
+
+</div>
+
+<div id="outline-container-3" class="outline-2">
+<h2 id="sec-3">3 Comments </h2>
+<div id="text-3">
+
+<p>Any post to a thread that comes after the initial post
+</p>
+
+</div>
+
+<div id="outline-container-3.1" class="outline-3">
+<h3 id="sec-3.1">3.1 id <i>(required)</i> </h3>
+<div id="text-3.1">
+
+<p>Unique identifier of the comment.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-3.2" class="outline-3">
+<h3 id="sec-3.2">3.2 parent_id <i>(optional)</i> </h3>
+<div id="text-3.2">
+
+<p>Some online discussion software supports threaded comments. Parent ID is the unique identifier of the parent comment.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-3.3" class="outline-3">
+<h3 id="sec-3.3">3.3 node_id <i>(required)</i> </h3>
+<div id="text-3.3">
+
+<p>The unique identifier of the node to which this comment is attached.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-3.4" class="outline-3">
+<h3 id="sec-3.4">3.4 user_id <i>(required)</i> </h3>
+<div id="text-3.4">
+
+<p>The unique identifier of the user that posted this comment.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-3.5" class="outline-3">
+<h3 id="sec-3.5">3.5 title <i>(optional)</i> </h3>
+<div id="text-3.5">
+
+<p>The title of this comment.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-3.6" class="outline-3">
+<h3 id="sec-3.6">3.6 body <i>(required)</i> </h3>
+<div id="text-3.6">
+
+<p>The body text of this comment.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-3.7" class="outline-3">
+<h3 id="sec-3.7">3.7 created <i>(optional, but desired)</i> </h3>
+<div id="text-3.7">
+
+<p>The date upon which this comment was created.
+</p></div>
+</div>
+
+</div>
+
+<div id="outline-container-4" class="outline-2">
+<h2 id="sec-4">4 Taxonomy </h2>
+<div id="text-4">
+
+<p>This data is not required, but if supplied it can be used to pre-populate taxonomies used for tagging content.
+</p>
+
+</div>
+
+<div id="outline-container-4.1" class="outline-3">
+<h3 id="sec-4.1">4.1 name <i>(required)</i> </h3>
+<div id="text-4.1">
+
+<p>The taxonomy term.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-4.2" class="outline-3">
+<h3 id="sec-4.2">4.2 description <i>(optional)</i> </h3>
+<div id="text-4.2">
+
+<p>A longer description of the taxonomy term.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-4.3" class="outline-3">
+<h3 id="sec-4.3">4.3 vocabulary <i>(required)</i> </h3>
+<div id="text-4.3">
+
+<p>A name for the vocabulary in which this taxonomy term resides. For example, the term "Scarlet Robin" is in the vocabulary "Birds"
+</p></div>
+</div>
+</div>
+<div id="postamble"><p class="author"> Author: Jeff Beeman
+<a href="mailto:jrbeeman@jeff-beemans-macbook-pro">&lt;jrbeeman@jeff-beemans-macbook-pro&gt;</a>
+</p>
+<p class="date"> Date: 2010-02-20 10:10:03 MST</p>
+<p>HTML generated by org-mode 6.21b in emacs 23</p>
+</div></body>
+</html>

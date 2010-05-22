@@ -1,0 +1,27 @@
+CREATE TABLE `term_chunk` (
+  `type` varchar(32) NOT NULL DEFAULT '',
+  `id` int(11) NOT NULL DEFAULT '0',
+  `start` int(11) NOT NULL DEFAULT '0',
+  `end` int(11) NOT NULL DEFAULT '0',
+  `tid` int(10) NOT NULL DEFAULT '0',
+  KEY `type` (`type`),
+  KEY `id` (`id`),
+  KEY `tid` (`tid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `term_color` (
+  `tid` int(10) NOT NULL DEFAULT '0',
+  `background` varchar(12) NOT NULL DEFAULT '',
+  `foreground` varchar(12) NOT NULL DEFAULT '',
+  PRIMARY KEY (`tid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `term_comment` (
+  `cid` int(11) NOT NULL DEFAULT '0',
+  `tid` int(10) NOT NULL DEFAULT '0',
+  `nid` int(10) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`tid`,`cid`),
+  KEY `tid` (`tid`),
+  KEY `cid` (`cid`),
+  KEY `nid` (`nid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

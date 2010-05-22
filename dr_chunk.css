@@ -1,0 +1,26 @@
+.context-menu-table {
+  width:auto;
+}
+.context-menu {
+}
+
+#dr-chunk-menu {
+    position:fixed;
+    top:30px;
+    right:10px;
+    background:#fff;
+    border:1px solid #000;
+    width:150px;
+    max-height:400px;
+    overflow:auto;
+    font-size:11px;
+}
+
+#dr-chunk-menu span {
+    display:block;
+    margin:3px;
+}
+
+/** Anytime dr_chunk is loaded, make content area a bit narrower to accomodate **/
+#main-inner {
+}
