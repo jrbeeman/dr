@@ -1,0 +1,87 @@
+hr
+{
+    border:none;
+    border-collapse:collapse;
+    color:#ccc;
+    background-color:#ccc;
+    height:1px;
+}
+
+blockquote
+{
+    margin:10px;
+    border-top:1px solid #ccc;
+    border-bottom:1px solid #ccc;
+}
+
+.node-type-dr-post .field-field-dr-user,
+.node-type-dr-post .field-field-dr-date,
+{
+    float:left;
+    width:50%;
+    color:#666;
+}
+
+.node-type-dr-post .views-field-field-dr-user-nid,
+.node-type-dr-post .views-field-field-dr-date-value
+{
+    color:#666;
+    line-height:28px;
+}
+
+.node-type-dr-post .views-field-field-dr-user-avatar-fid
+{
+    float:left;
+    padding: 0 5px 5px 5px;
+}
+
+.node-type-dr-post .field-field-dr-user label,
+.node-type-dr-post .field-field-dr-date label,
+.node-type-dr-post .views-field-field-dr-user-nid label,
+.node-type-dr-post .views-field-field-dr-date-value label
+{
+    padding:5px;
+    line-height:24px;
+}
+
+.node-type-dr-post .views-field-edit-node
+{
+    float:right;
+    height:0;
+    position:relative;
+    right:10px;
+    top:-25px;
+}
+
+.node-type-dr-post .pane-node-body,
+.node-type-dr-post .views-field-body
+{
+    padding:20px 0;
+    clear:left;
+}
+
+.view-dr-post-children .views-field-title 
+{
+    font-weight:bold;
+    font-size:18px;
+    border-top:1px solid #ccc;
+    padding:5px;
+    margin-top:10px;
+    background:#eee;
+}
+
+.node-type-dr-post .views-field-field-dr-user-nid,
+.node-type-dr-post .views-field-field-dr-date-value
+{
+    background:#eee;
+}
+
+h2.pane-title 
+{
+    font-size:24px;
+    font-weight:bold;
+    letter-spacing:-1px;
+    padding:10px 0;
+}
+
+
