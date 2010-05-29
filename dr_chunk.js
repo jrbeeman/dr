@@ -29,46 +29,40 @@ Drupal.dr_chunk.initialize = function() {
 }
 
 /**
-* @todo load all the html in here via AHAH
-* @todo Add a toggle to turn on/off the styles
-*/
+ * Note: This won't work with TinyMCE after version 3.2.7
+ * @todo Get working with new versions of TinyMCE
+ * @todo load all the html in here via AHAH
+ * @todo Add a toggle to turn on/off the styles
+ */
 Drupal.dr_chunk.prepare_node = function(instanceId) {
-    var terms = Drupal.settings.dr.terms;
-    var menu = '<div id="dr-chunk-menu"><div id="dr-chunk-menu-inner">';
-    for (index in terms) {
-        var term = terms[index];
-        menu += '<a href="#">';
-        menu += '<span id="taxonomy-term-'+ term.tid +'" style="background-color:'+ term.background +'; color: '+ term.foreground +';">'+ term.name +'</span>';
-        menu += '</a>';
-    }
-    menu += '</div>';
-    menu += '<div id="dr-chunk-menu-slider" style="padding:2px; text-align:right;"><a href="#">Show / Hide Tags</a></div>';
-    menu += '</div>';
-    $('body').append(menu);
-    $('#dr-chunk-menu-inner a').bind('click', function() {
-        var css_class = $(this).find('span').attr('id');
-        var ed = tinyMCE.editors[instanceId];
-        ed.execCommand('mceSetCSSClass', 0, css_class);
-        return false;
-    });
-    $('#dr-chunk-menu-slider a').bind('click', function() {
-        $('#dr-chunk-menu-inner').slideToggle();
-        return false;
-    });
-
-    // Inject the CSS needed for rendering into the iframe
-    // From: http://www.shawnolson.net/a/503/altering-css-class-attributes-with-javascript.html
-    // Add local stylesheet to the iframe
-    var out = '<style type="text/css">';
-    for (index in terms) {
-        var term = terms[index];
-        var className = 'taxonomy-term-'+ term.tid;
-        out += '.'+ className +' { background-color:'+ term.background +'; color:'+ term.foreground +'; } ';
-    }
-    out += '</style>';
-    $('#'+ instanceId +'_ifr').contents().find('head').append(out);
-    if (!Drupal.dr_chunk.loadedStyles) {
-        $('head').append(out);
+    if (Drupal.settings.dr && Drupal.settings.dr.terms) {
+        var terms = Drupal.settings.dr.terms;
+        $('body').append(Drupal.settings.dr.terms_markup);
+        $('#dr-chunk-menu-inner a').bind('click', function() {
+            var css_class = $(this).find('span').attr('id');
+            var ed = tinyMCE.editors[instanceId];
+            ed.execCommand('mceSetCSSClass', 0, css_class);
+            return false;
+        });
+        $('#dr-chunk-menu-slider a').bind('click', function() {
+            $('#dr-chunk-menu-inner').slideToggle();
+            return false;
+        });
+        
+        // Inject the CSS needed for rendering into the iframe
+        // From: http://www.shawnolson.net/a/503/altering-css-class-attributes-with-javascript.html
+        // Add local stylesheet to the iframe
+        var out = '<style type="text/css">';
+        for (index in terms) {
+            var term = terms[index];
+            var className = 'taxonomy-term-'+ term.tid;
+            out += '.'+ className +' { background-color:'+ term.background +'; color:'+ term.foreground +'; } ';
+        }
+        out += '</style>';
+        $('#'+ instanceId +'_ifr').contents().find('head').append(out);
+        if (!Drupal.dr_chunk.loadedStyles) {
+            $('head').append(out);
+        }
     }
 }
 

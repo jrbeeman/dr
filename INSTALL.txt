@@ -4,6 +4,7 @@ CREATE TABLE `term_chunk` (
   `start` int(11) NOT NULL DEFAULT '0',
   `end` int(11) NOT NULL DEFAULT '0',
   `tid` int(10) NOT NULL DEFAULT '0',
+  `contents` text NOT NULL DEFAULT '',
   KEY `type` (`type`),
   KEY `id` (`id`),
   KEY `tid` (`tid`)

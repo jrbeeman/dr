@@ -6,19 +6,30 @@
 
 #dr-chunk-menu {
     position:fixed;
-    top:30px;
-    right:10px;
+    top:20px;
+    left:20px;
     background:#fff;
     border:1px solid #000;
-    width:150px;
+    width:180px;
     max-height:400px;
     overflow:auto;
     font-size:11px;
 }
 
+#dr-chunk-menu dt {
+    font-weight:bold;
+    margin:3px;
+}
+
+#dr-chunk-menu dd {
+    margin:3px;
+    padding:0;
+    font-size:inherit;
+}
+
 #dr-chunk-menu span {
     display:block;
-    margin:3px;
+    padding:1px;
 }
 
 /** Anytime dr_chunk is loaded, make content area a bit narrower to accomodate **/

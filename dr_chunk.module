@@ -49,7 +49,7 @@ function dr_chunk_menu() {
 function dr_chunk_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
   if ($op == 'prepare') {
     // Showing the node, so load up all terms and prep the JS interface
-    dr_chunk_prepare_tagging();
+    dr_chunk_prepare_tagging($node->type);
   }
   
   if ($op == 'update' || $op == 'insert') {
@@ -60,14 +60,17 @@ function dr_chunk_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
 
 function dr_chunk_match_terms($text) {
   $tids = array();
-  preg_match_all('/taxonomy\-term\-[0-9]{1,5}/', $text, $matches, PREG_OFFSET_CAPTURE);
+  preg_match_all('/\<[ ]?([-_.a-zA-z0-9]+)[ ]+class=[ ]?[\'\"][-_. a-zA-Z0-9]?taxonomy\-term\-([0-9]+)[-_. a-zA-Z0-9]?[\'\"][^>]*\>.*\<\/\1\>/', $text, $matches, PREG_OFFSET_CAPTURE);
+  error_log(print_r($matches, true));
   if ($matches && count($matches[0])) {
-    foreach ($matches[0] as $match) {
-      $tid = (int)preg_replace('/taxonomy\-term\-/', '', $match[0]);
+    foreach ($matches[0] as $key => $match) {
+      $tid = $matches[2][$key][0];
       if (is_numeric($tid)) {
         $tids[] = array(
           'tid' => $tid,
           'start' => $match[1] ? $match[1] : 0,
+          'end' => strlen($match[0]),
+          'contents' => $match[0],
         );
       }
     }
@@ -80,22 +83,59 @@ function dr_chunk_save_item_terms($type, $id, $terms = array()) {
   $sql = "DELETE FROM {term_chunk} WHERE type = '%s' AND id = %d";
   db_query($sql, $type, $id);
   // Add new terms
-  $sql = "INSERT INTO {term_chunk} (type, id, start, tid) VALUES ('%s', %d, %d, %d)";
+  $sql = "INSERT INTO {term_chunk} (type, id, start, tid, contents) VALUES ('%s', %d, %d, %d, '%s')";
   foreach ($terms as $term) {
-    db_query($sql, $type, $id, $term['start'], $term['tid']);
+    db_query($sql, $type, $id, $term['start'], $term['tid'], $term['contents']);
   }
 }
 
-function dr_chunk_prepare_tagging() {
+/**
+ * @todo Allow taxonomies to be per-collection
+ */
+function dr_chunk_prepare_tagging($node_type) {
   static $processed = FALSE;
   if (!$processed) {
     dr_chunk_add_js_css();
-    $terms = dr_chunk_all_terms();
-    $js = array();
-    $js['dr']['terms'] = $terms;
-    drupal_add_js($js, 'setting');
+    if ($node_type == 'dr_post') {
+      $terms = dr_chunk_all_terms();
+      $js = array();
+      $js['dr']['terms'] = $terms;
+      $js['dr']['terms_markup'] = theme('dr_chunk_term_selector', $terms);
+      drupal_add_js($js, 'setting');
+    }
     $processed = TRUE;
   }
+}
+
+function dr_chunk_theme($existing, $type, $theme, $path) {
+  return array(
+    'dr_chunk_term_selector' => array(
+      'arguments' => array('terms' => NULL),
+    ),
+  );
+}
+
+
+function theme_dr_chunk_term_selector($terms) {
+  $vocabs = array();
+  foreach ($terms as $tid => $term) {
+    $vocabs[$term['vid']] = $term['vocab_name'];
+  }
+  $out = '<div id="dr-chunk-menu"><div id="dr-chunk-menu-inner"><dl>';
+  foreach ($vocabs as $vid => $vocab_name) {
+    $out .= '<dt>'. $vocab_name .'</dt>';
+    foreach ($terms as $tid => $term ) {
+      if ($term['vid'] == $vid) {
+        $out .= '<dd><a href="#">';
+        $out .= '<span id="taxonomy-term-'. $term['tid'] .'" style="background-color:'. $term['background'] .'; color: '. $term['foreground'] .';">'. $term['term_name'] .'</span>';
+        $out .= '</a></dd>';
+      }
+    }
+  }
+  $out .= '</dl></div>';
+  $out .= '<div id="dr-chunk-menu-slider" style="padding:2px; text-align:right;"><a href="#">'. t('Show / Hide Tags') .'</a></div>';
+  $out .= '</div>';
+  return $out;
 }
 
 /**
@@ -211,13 +251,14 @@ function dr_chunk_term_colors($tid) {
  */
 function dr_chunk_all_terms() {
   $terms = array();
-  $sql = "SELECT tc.tid, tc.background, tc.foreground, td.name
+  $sql = "SELECT tc.tid, tc.background, tc.foreground, td.name AS term_name, v.name AS vocab_name, v.vid
           FROM {term_color} tc
           LEFT JOIN {term_data} td ON tc.tid = td.tid
-          ORDER BY td.weight, td.name";
-  $result = db_query($sql);
+          LEFT JOIN {vocabulary} v ON td.vid = v.vid
+          ORDER BY v.weight, v.name, td.weight, td.name";
+  $result = db_query($sql, $node_type);
   while ($row = db_fetch_array($result)) {
-    $terms[$row['tid']] = $row;
+    $terms[] = $row;
   }
   return $terms;
 }
