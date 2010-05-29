@@ -1,12 +1,9 @@
 CREATE TABLE `term_chunk` (
-  `type` varchar(32) NOT NULL DEFAULT '',
-  `id` int(11) NOT NULL DEFAULT '0',
-  `start` int(11) NOT NULL DEFAULT '0',
-  `end` int(11) NOT NULL DEFAULT '0',
+  `nid` int(11) NOT NULL DEFAULT '0',
   `tid` int(10) NOT NULL DEFAULT '0',
-  `contents` text NOT NULL DEFAULT '',
-  KEY `type` (`type`),
-  KEY `id` (`id`),
+  `html` text NOT NULL DEFAULT '',
+  `text` text NOT NULL DEFAULT '',
+  KEY `nid` (`nid`),
   KEY `tid` (`tid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -17,6 +14,8 @@ CREATE TABLE `term_color` (
   PRIMARY KEY (`tid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+
+-- Legacy
 CREATE TABLE `term_comment` (
   `cid` int(11) NOT NULL DEFAULT '0',
   `tid` int(10) NOT NULL DEFAULT '0',
