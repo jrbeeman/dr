@@ -15,6 +15,7 @@ blockquote
 }
 
 .node-type-dr-post .field-field-dr-user,
+.node-type-dr-post .views-field-field-dr-user-name-value,
 .node-type-dr-post .field-field-dr-date,
 {
     float:left;
@@ -23,6 +24,7 @@ blockquote
 }
 
 .node-type-dr-post .views-field-field-dr-user-nid,
+.node-type-dr-post .views-field-field-dr-user-name-value,
 .node-type-dr-post .views-field-field-dr-date-value
 {
     color:#666;
@@ -38,6 +40,7 @@ blockquote
 .node-type-dr-post .field-field-dr-user label,
 .node-type-dr-post .field-field-dr-date label,
 .node-type-dr-post .views-field-field-dr-user-nid label,
+.node-type-dr-post .views-field-field-dr-user-name-value label,
 .node-type-dr-post .views-field-field-dr-date-value label
 {
     padding:5px;
@@ -71,6 +74,7 @@ blockquote
 }
 
 .node-type-dr-post .views-field-field-dr-user-nid,
+.node-type-dr-post .views-field-field-dr-user-name-value,
 .node-type-dr-post .views-field-field-dr-date-value
 {
     background:#eee;
