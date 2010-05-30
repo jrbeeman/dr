@@ -3,14 +3,6 @@
 module_load_include('inc', 'dr', 'dr.reports');
 
 /**
- * Implementation of hook_init().
- */
-function dr_init() {
-  $path = drupal_get_path('module', 'dr');
-  drupal_add_css($path .'/custom.css');
-}
-
-/**
  * Implementation of hook_menu().
  */
 function dr_menu() {

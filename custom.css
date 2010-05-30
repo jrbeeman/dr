@@ -12,19 +12,27 @@ a:hover
     text-decoration:underline;
 }
 
+ins, 
 blockquote
 {
-    margin:10px;
     border-top:1px solid #ccc;
     border-bottom:1px solid #ccc;
 }
 
+small
+{
+    font-size:80%;
+}
+
+big
+{
+    font-size:120%;
+}
+
 .node-type-dr-post .field-field-dr-user,
 .node-type-dr-post .views-field-field-dr-user-name-value,
-.node-type-dr-post .field-field-dr-date,
+.node-type-dr-post .field-field-dr-date
 {
-    float:left;
-    width:50%;
     color:#666;
 }
 
