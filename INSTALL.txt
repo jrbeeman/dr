@@ -1,8 +1,10 @@
 CREATE TABLE `term_chunk` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `nid` int(11) NOT NULL DEFAULT '0',
   `tid` int(10) NOT NULL DEFAULT '0',
   `html` text NOT NULL DEFAULT '',
   `text` text NOT NULL DEFAULT '',
+  PRIMARY KEY (`id`),
   KEY `nid` (`nid`),
   KEY `tid` (`tid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
