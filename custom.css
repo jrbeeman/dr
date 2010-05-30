@@ -7,6 +7,11 @@ hr
     height:1px;
 }
 
+a:hover
+{
+    text-decoration:underline;
+}
+
 blockquote
 {
     margin:10px;
@@ -47,13 +52,20 @@ blockquote
     line-height:24px;
 }
 
-.node-type-dr-post .views-field-edit-node
+.node-type-dr-post .panel-pane.links,
+.node-type-dr-post .views-field-phpcode .links
 {
     float:right;
-    height:0;
+    font-size:80%;
     position:relative;
-    right:10px;
-    top:-25px;
+    top:-2em
+}
+
+.node-type-dr-post .panel-pane.links a,
+.node-type-dr-post .views-field-phpcode .links a
+{
+    margin-left:10px;
+    font-weight:bold;
 }
 
 .node-type-dr-post .pane-node-body,
@@ -88,4 +100,7 @@ h2.pane-title
     padding:10px 0;
 }
 
-
+ul.links li
+{
+    margin-left:5px;
+}

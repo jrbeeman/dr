@@ -21,11 +21,6 @@ Drupal.dr_chunk.initialize = function() {
         var fb_back = $.farbtastic('#taxonomy-form-term #colorpicker-background', Drupal.dr_chunk.farb_back);
         fb_back.setColor(back);
     }
-
-    // Node page alterations
-    if (context == 'page-node') {
-        //Drupal.dr_chunk.prepare_node();
-    }
 }
 
 /**
