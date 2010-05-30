@@ -22,6 +22,17 @@ function dr_menu() {
  * - Make sure there's an entry for every day in the thread
  */
 function dr_fill_array_dates(&$dates, $start, $end) {
+  $one_day = 24 * 60 * 60;
+  $two_days = 2 * $one_day;
+
+  // Make sure the array has at least 3 items
+  if ($start == $end || ($end - $start) < $one_day) {
+    $end += $two_days;
+  }
+  if (($end - $start) < $two_days) {
+    $end += $one_day;
+  }
+
   $date = $start;
   while ($date <= $end) {
     if (!array_key_exists($date, $dates)) {
@@ -55,5 +66,83 @@ function dr_filter_array(&$data, $max) {
       }
       $data = $new_data;
     }
+  }
+}
+
+/**
+ * Implementation of hook_block().
+ */
+function dr_block($op = 'list', $delta = 0, $edit = array()) {
+  if ($op == 'list') {
+    $blocks['taxonomy'] = array(
+      'info' => t('DR Report: Taxonomy'),
+    );
+    $blocks['thread_taxonomy'] = array(
+      'info' => t('DR Report: Thread taxonomy'),
+    );
+    $blocks['thread_activity'] = array(
+      'info' => t('DR Report: Thread activity by date'),
+    );
+    $blocks['thread_taxonomy_activity'] = array(
+      'info' => t('DR Report: Thread taxonomy activity by date'),
+    );
+    $blocks['user_taxonomy'] = array(
+      'info' => t('DR Report: User taxonomy'),
+    );
+    $blocks['user_activity'] = array(
+      'info' => t('DR Report: User activity by date'),
+    );
+    $blocks['user_taxonomy_activity'] = array(
+      'info' => t('DR Report: User taxonomy activity by date'),
+    );
+
+    // Set the caching for all blocks to be per-page
+    foreach ($blocks as $key => $block) {
+      $block['cache'] = BLOCK_CACHE_PER_PAGE;
+      $blocks[$key] = $block;
+    }
+    return $blocks;
+  }
+
+  if ($op == 'view') {
+    $function = 'dr_block_'. $delta;
+    $block = $function();
+    return $block;
+  }
+}
+
+function dr_block_user_activity() {
+  if (arg(0) == 'node' && is_numeric(arg(1))) {
+    $node = node_load(arg(1));
+    $dates = array();
+    $out = '';
+    $date_start = strtotime(format_date($node->field_dr_user_date[0]['value'], 'custom', 'Y-m-d'));
+    $date_end = NULL;
+
+    $sql = "SELECT
+            MAX(cck.vid),
+            COUNT(DISTINCT(cck.nid)) AS num,
+            FROM_UNIXTIME(cck.field_dr_date_value, '%%Y-%%m-%%d') AS day
+            FROM {content_type_dr_post} cck
+            WHERE cck.field_dr_user_nid = %d
+            GROUP BY nid, day
+            ORDER BY day";
+    $result = db_query($sql, $node->nid);
+    while ($row = db_fetch_object($result)) {
+      // Negotiate the start and end date
+      $timestamp = strtotime($row->day);
+      if ($timestamp < $date_start) {
+        $date_start = $timestamp;
+      }
+      if ($timestamp > $date_end) {
+        $date_end = $timestamp;
+      }
+      $dates[$timestamp] += $row->num;
+    }
+
+    return array(
+      'subject' => t('User activity'),
+      'content' => dr_chart_activity_by_date($dates, $date_start, $date_end),
+    );
   }
 }

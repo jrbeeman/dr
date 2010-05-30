@@ -470,8 +470,6 @@ function dr_chart_activity_by_date($dates, $date_start, $date_end) {
     );
   }
 
-  // TODO: Finish making a multi-series chart w/ totals
-
   $info->data = $chart_data;
   $info->chart_type = 'Line 2D';
   $info->settings = array(
