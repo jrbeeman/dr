@@ -39,6 +39,14 @@ function dr_chunk_views_data() {
       'base field' => 'tid',
       'label' => t('term'),
     ),
+    'argument' => array(
+      'handler' => 'views_handler_argument_term_node_tid',
+      'name table' => 'term_data',
+      'name field' => 'name',
+      'empty field name' => t('Uncategorized'),
+      'numeric' => TRUE,
+      'skip base' => 'term_data',
+    ),
   );
   // nid field
   $data['term_chunk']['nid'] = array(
