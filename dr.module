@@ -1,5 +1,9 @@
 <?php
 
+define('DR_POST_TYPE', 'dr_post');
+define('DR_USER_TYPE', 'dr_user');
+define('DR_COLLECTION_TYPE', 'dr_collection');
+
 module_load_include('inc', 'dr', 'dr.reports');
 
 /**
@@ -80,13 +84,13 @@ function dr_block($op = 'list', $delta = 0, $edit = array()) {
     $blocks['taxonomy'] = array(
       'info' => t('DR Report: Taxonomy'),
     );
-    $blocks['thread_taxonomy'] = array(
+    $blocks['post_taxonomy'] = array(
       'info' => t('DR Report: Thread taxonomy'),
     );
-    $blocks['thread_activity'] = array(
+    $blocks['post_activity'] = array(
       'info' => t('DR Report: Thread activity by date'),
     );
-    $blocks['thread_taxonomy_activity'] = array(
+    $blocks['post_taxonomy_activity'] = array(
       'info' => t('DR Report: Thread taxonomy activity by date'),
     );
     $blocks['user_taxonomy'] = array(
@@ -114,7 +118,7 @@ function dr_block($op = 'list', $delta = 0, $edit = array()) {
   }
 }
 
-function dr_block_thread_activity() {
+function dr_block_post_activity() {
   if (arg(0) == 'node' && is_numeric(arg(1))) {
     // Only show for top-level dr_user nodes
     $node = node_load(arg(1));
@@ -188,36 +192,74 @@ function dr_block_user_activity() {
   }
 }
 
-function dr_block_thread_taxonomy() {
-  if (arg(0) == 'node' && is_numeric(arg(1))) {
-    // Only show for top-level dr_user nodes
+function dr_block_collection_taxonomy() {
+  return _dr_block_object_taxonomy(DR_POST_TYPE);
+}
+
+function dr_block_post_taxonomy() {
+  return _dr_block_object_taxonomy(DR_POST_TYPE);
+}
+
+function dr_block_user_taxonomy() {
+  return _dr_block_object_taxonomy(DR_USER_TYPE);
+}
+
+function _dr_block_object_taxonomy($type) {
+  $allowed_types = array(DR_COLLECTION_TYPE, DR_POST_TYPE, DR_USER_TYPE);
+
+  // Only show when viewing a node
+  if (arg(0) == 'node' && is_numeric(arg(1)) && in_array($type, $allowed_types)) {
     $node = node_load(arg(1));
-    if (($node->type != 'dr_post') || ($node->field_dr_parent[0]['nid'])) {
-      // This is a child post of a larger thread and, therefore, has no thread activity
+
+    // Check if this is a child post of a larger thread and, therefore, has no thread activity
+    if (($node->type == DR_POST_TYPE) && ($node->field_dr_parent[0]['nid'])) {
       return;
     }
 
     $out = '';
 
     // Get all the vocabularies for the post node type
-    $vocabs = taxonomy_get_vocabularies($node->type);
+    $vocabs = taxonomy_get_vocabularies(DR_POST_TYPE);
     foreach ($vocabs as $vid => $vocab) {
       $info = new stdClass();
       $data = array();
       $count_total = 0;
-      $sql = "SELECT
-                td.tid AS tid, 
-                td.name AS term_name,
-                COUNT(tc.tid) AS num
-              FROM term_chunk tc
-                INNER JOIN {content_type_dr_post} cck ON tc.nid = cck.nid
-                INNER JOIN {node} n ON n.vid = cck.vid
-                INNER JOIN {term_data} td ON tc.tid = td.tid
-              WHERE (cck.field_dr_parent_nid = %d OR cck.nid = %d)
-                AND td.vid = %d
-              GROUP BY tc.tid
-              ORDER BY td.weight ASC";
-      $result = db_query($sql, $node->nid, $node->nid, $vid);
+
+      // Post nodes
+      if ($type == DR_POST_TYPE) {
+        $sql = "SELECT
+                  td.tid AS tid, 
+                  td.name AS term_name,
+                  COUNT(tc.tid) AS num
+                FROM term_chunk tc
+                  INNER JOIN {content_type_dr_post} cck ON tc.nid = cck.nid
+                  INNER JOIN {node} n ON n.vid = cck.vid
+                  INNER JOIN {term_data} td ON tc.tid = td.tid
+                WHERE (cck.field_dr_parent_nid = %d OR cck.nid = %d)
+                  AND td.vid = %d
+                GROUP BY tc.tid
+                ORDER BY td.weight ASC";
+        $result = db_query($sql, $node->nid, $node->nid, $vid);
+      }
+
+      // User nodes
+      if ($type == DR_USER_TYPE) {
+        $sql = "SELECT
+                  td.tid AS tid, 
+                  td.name AS term_name,
+                  COUNT(tc.tid) AS num
+                FROM term_chunk tc
+                  INNER JOIN {content_type_dr_post} cck ON tc.nid = cck.nid
+                  INNER JOIN {node} n ON n.vid = cck.vid
+                  INNER JOIN {term_data} td ON tc.tid = td.tid
+                WHERE cck.field_dr_user_nid = %d
+                  AND td.vid = %d
+                GROUP BY tc.tid
+                ORDER BY td.weight ASC";
+        $result = db_query($sql, $node->nid, $vid);
+      }
+
+      // Parse the results
       while ($row = db_fetch_object($result)) {
         $data[] = array($row->term_name, $row->num);
         $count_total += $row->num;
@@ -246,7 +288,7 @@ function dr_block_thread_taxonomy() {
     }
   }
   return array(
-    'subject' => t('Thread taxonomy term usage'),
+    'subject' => t('Taxonomy term usage'),
     'content' => $out,
   );
 }
