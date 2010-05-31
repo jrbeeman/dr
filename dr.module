@@ -84,6 +84,12 @@ function dr_block($op = 'list', $delta = 0, $edit = array()) {
     $blocks['taxonomy'] = array(
       'info' => t('DR Report: Taxonomy'),
     );
+    $blocks['collection_taxonomy'] = array(
+      'info' => t('DR Report: Collection taxonomy'),
+    );
+    $blocks['collection_activity'] = array(
+      'info' => t('DR Report: Collection activity by date'),
+    );
     $blocks['post_taxonomy'] = array(
       'info' => t('DR Report: Thread taxonomy'),
     );
@@ -118,60 +124,65 @@ function dr_block($op = 'list', $delta = 0, $edit = array()) {
   }
 }
 
+/** ---- Activity reports ---- **/
+
+function dr_block_collection_activity() {
+  return _dr_block_object_activity(DR_COLLECTION_TYPE);
+}
+
 function dr_block_post_activity() {
-  if (arg(0) == 'node' && is_numeric(arg(1))) {
-    // Only show for top-level dr_user nodes
-    $node = node_load(arg(1));
-    if (($node->type != 'dr_post') || ($node->field_dr_parent[0]['nid'])) {
-      // This is a child post of a larger thread and, therefore, has no thread activity
-      return;
-    }
-
-    $dates = array();
-    $date_start = strtotime(format_date($node->field_dr_date[0]['value'], 'custom', 'Y-m-d'));
-    $dates[$date_start] = 1; // Count the post itself as part of the total
-    $date_end = NULL;
-    
-    $sql = "SELECT
-            n.nid, n.vid,
-            cck.field_dr_date_value AS date
-            FROM {node} n
-            INNER JOIN {content_type_dr_post} cck ON n.vid = cck.vid
-            WHERE cck.field_dr_parent_nid = %d";
-    $result = db_query($sql, $node->nid);
-    while ($row = db_fetch_object($result)) {
-      $timestamp = strtotime(format_date($row->date, 'custom', 'Y-m-d'));
-      $dates[$timestamp]++;
-      $date_end = $timestamp;
-    }
-
-    return array(
-      'subject' => t('Thread activity'),
-      'content' => dr_chart_activity_by_date($dates, $date_start, $date_end),
-    );
-  }  
+  return _dr_block_object_activity(DR_POST_TYPE);
 }
 
 function dr_block_user_activity() {
-  if (arg(0) == 'node' && is_numeric(arg(1))) {
+  return _dr_block_object_activity(DR_USER_TYPE);
+}
 
-    // Only show for dr_user nodes
+function _dr_block_object_activity($type) {
+  $allowed_types = array(DR_COLLECTION_TYPE, DR_POST_TYPE, DR_USER_TYPE);
+
+  // Only show when viewing a node
+  if (arg(0) == 'node' && is_numeric(arg(1)) && in_array($type, $allowed_types)) {
     $node = node_load(arg(1));
-    if ($node->type != 'dr_user') {
-      return;
-    }
 
     $dates = array();
     $date_start = NULL;
     $date_end = NULL;
 
-    $sql = "SELECT
-            n.nid, n.vid,
-            cck.field_dr_date_value AS date
-            FROM {node} n
-            INNER JOIN {content_type_dr_post} cck ON n.vid = cck.vid
-            WHERE cck.field_dr_user_nid = %d";
-    $result = db_query($sql, $node->nid);
+    // Collection nodes
+    if ($type == DR_COLLECTION_TYPE) {
+      $sql = "SELECT
+              n.nid, n.vid,
+              cck.field_dr_date_value AS date
+              FROM {node} n
+              INNER JOIN {content_type_dr_post} cck ON n.vid = cck.vid
+              INNER JOIN {content_field_dr_collection} f ON n.vid = f.vid
+              WHERE f.field_dr_collection_nid = %d";
+      $result = db_query($sql, $node->nid);
+    }
+
+    // Post nodes
+    if ($type == DR_POST_TYPE) {
+      $sql = "SELECT
+              n.nid, n.vid,
+              cck.field_dr_date_value AS date
+              FROM {node} n
+              INNER JOIN {content_type_dr_post} cck ON n.vid = cck.vid
+              WHERE cck.field_dr_parent_nid = %d";
+      $result = db_query($sql, $node->nid);
+    }
+
+    // User nodes
+    if ($type == DR_USER_TYPE) {
+      $sql = "SELECT
+              n.nid, n.vid,
+              cck.field_dr_date_value AS date
+              FROM {node} n
+              INNER JOIN {content_type_dr_post} cck ON n.vid = cck.vid
+              WHERE cck.field_dr_user_nid = %d";
+      $result = db_query($sql, $node->nid);
+    }
+
     while ($row = db_fetch_object($result)) {
       $timestamp = strtotime(format_date($row->date, 'custom', 'Y-m-d'));
       // Negotiate the start and end date
@@ -186,14 +197,16 @@ function dr_block_user_activity() {
     }
 
     return array(
-      'subject' => t('User activity'),
+      'subject' => t('Activity'),
       'content' => dr_chart_activity_by_date($dates, $date_start, $date_end),
     );
   }
 }
 
+/** ---- Taxonomy reports ---- **/
+
 function dr_block_collection_taxonomy() {
-  return _dr_block_object_taxonomy(DR_POST_TYPE);
+  return _dr_block_object_taxonomy(DR_COLLECTION_TYPE);
 }
 
 function dr_block_post_taxonomy() {
@@ -224,6 +237,23 @@ function _dr_block_object_taxonomy($type) {
       $info = new stdClass();
       $data = array();
       $count_total = 0;
+
+      // Collection nodes
+      if ($type == DR_COLLECTION_TYPE) {
+        $sql = "SELECT
+                  td.tid AS tid, 
+                  td.name AS term_name,
+                  COUNT(tc.tid) AS num
+                FROM term_chunk tc
+                  INNER JOIN {content_field_dr_collection} f ON tc.nid = f.nid
+                  INNER JOIN {node} n ON n.vid = f.vid
+                  INNER JOIN {term_data} td ON tc.tid = td.tid
+                WHERE f.field_dr_collection_nid = %d
+                  AND td.vid = %d
+                GROUP BY tc.tid
+                ORDER BY td.weight ASC";
+        $result = db_query($sql, $node->nid, $vid);
+      }
 
       // Post nodes
       if ($type == DR_POST_TYPE) {
