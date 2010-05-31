@@ -90,14 +90,17 @@ function dr_block($op = 'list', $delta = 0, $edit = array()) {
     $blocks['collection_activity'] = array(
       'info' => t('DR Report: Collection activity by date'),
     );
+    $blocks['collection_taxonomy_activity'] = array(
+      'info' => t('DR Report: Collection taxonomy activity by date'),
+    );
     $blocks['post_taxonomy'] = array(
-      'info' => t('DR Report: Thread taxonomy'),
+      'info' => t('DR Report: Post taxonomy'),
     );
     $blocks['post_activity'] = array(
-      'info' => t('DR Report: Thread activity by date'),
+      'info' => t('DR Report: Post activity by date'),
     );
     $blocks['post_taxonomy_activity'] = array(
-      'info' => t('DR Report: Thread taxonomy activity by date'),
+      'info' => t('DR Report: Post taxonomy activity by date'),
     );
     $blocks['user_taxonomy'] = array(
       'info' => t('DR Report: User taxonomy'),
@@ -152,22 +155,23 @@ function _dr_block_object_activity($type) {
     // Collection nodes
     if ($type == DR_COLLECTION_TYPE) {
       $sql = "SELECT
-              n.nid, n.vid,
-              cck.field_dr_date_value AS date
+                n.nid, n.vid,
+                cck.field_dr_date_value AS date
               FROM {node} n
-              INNER JOIN {content_type_dr_post} cck ON n.vid = cck.vid
-              INNER JOIN {content_field_dr_collection} f ON n.vid = f.vid
-              WHERE f.field_dr_collection_nid = %d";
+                INNER JOIN {content_type_dr_post} cck ON n.vid = cck.vid
+                INNER JOIN {content_field_dr_collection} f ON n.vid = f.vid
+              WHERE 
+                f.field_dr_collection_nid = %d";
       $result = db_query($sql, $node->nid);
     }
 
     // Post nodes
     if ($type == DR_POST_TYPE) {
       $sql = "SELECT
-              n.nid, n.vid,
-              cck.field_dr_date_value AS date
+                n.nid, n.vid,
+                cck.field_dr_date_value AS date
               FROM {node} n
-              INNER JOIN {content_type_dr_post} cck ON n.vid = cck.vid
+                INNER JOIN {content_type_dr_post} cck ON n.vid = cck.vid
               WHERE cck.field_dr_parent_nid = %d";
       $result = db_query($sql, $node->nid);
     }
@@ -175,10 +179,10 @@ function _dr_block_object_activity($type) {
     // User nodes
     if ($type == DR_USER_TYPE) {
       $sql = "SELECT
-              n.nid, n.vid,
-              cck.field_dr_date_value AS date
+                n.nid, n.vid,
+                cck.field_dr_date_value AS date
               FROM {node} n
-              INNER JOIN {content_type_dr_post} cck ON n.vid = cck.vid
+                INNER JOIN {content_type_dr_post} cck ON n.vid = cck.vid
               WHERE cck.field_dr_user_nid = %d";
       $result = db_query($sql, $node->nid);
     }
@@ -244,8 +248,8 @@ function _dr_block_object_taxonomy($type) {
                   td.name AS term_name,
                   COUNT(tc.tid) AS num
                 FROM term_chunk tc
-                  INNER JOIN {content_field_dr_collection} f ON tc.nid = f.nid
-                  INNER JOIN {node} n ON n.vid = f.vid
+                  INNER JOIN {node} n ON n.nid = tc.nid
+                  INNER JOIN {content_field_dr_collection} f ON f.vid = n.vid
                   INNER JOIN {term_data} td ON tc.tid = td.tid
                 WHERE f.field_dr_collection_nid = %d
                   AND td.vid = %d
@@ -379,6 +383,14 @@ function _dr_chart_activity_by_date($dates, $date_start, $date_end) {
 
 /** ---- Taxonomy activity reports ---- **/
 
+function dr_block_collection_taxonomy_activity() {
+  return _dr_block_object_taxonomy_activity(DR_COLLECTION_TYPE);
+}
+
+function dr_block_post_taxonomy_activity() {
+  return _dr_block_object_taxonomy_activity(DR_POST_TYPE);
+}
+
 function dr_block_user_taxonomy_activity() {
   return _dr_block_object_taxonomy_activity(DR_USER_TYPE);
 }
@@ -405,14 +417,45 @@ function _dr_block_object_taxonomy_activity($type) {
       $series = array();
       $date_start = NULL;
       $date_end = NULL;
+
+      // Collection nodes
+      if ($type == DR_COLLECTION_TYPE) {
+        $sql = "SELECT
+                  td.tid AS tid, td.name AS term_name,
+                  cck.field_dr_date_value AS date
+                FROM {term_data} td
+                  INNER JOIN {term_chunk} tc ON td.tid = tc.tid
+                  INNER JOIN {node} n ON tc.nid = n.nid
+                  INNER JOIN {content_field_dr_collection} f ON n.vid = f.vid
+                  INNER JOIN {content_type_dr_post} cck ON n.vid = cck.vid
+                WHERE 
+                  f.field_dr_collection_nid = %d
+                  AND td.vid = %d";
+        $result = db_query($sql, $node->nid, $vid);
+      }      
       
+      // Post nodes
+      if ($type == DR_POST_TYPE) {
+        $sql = "SELECT
+                  td.tid AS tid, td.name AS term_name,
+                  cck.field_dr_date_value AS date
+                FROM {term_data} td
+                  INNER JOIN {term_chunk} tc ON td.tid = tc.tid
+                  INNER JOIN {node} n ON tc.nid = n.nid
+                  INNER JOIN {content_type_dr_post} cck ON n.vid = cck.vid
+                WHERE 
+                  (cck.field_dr_parent_nid = %d OR cck.nid = %d)
+                  AND td.vid = %d";
+        $result = db_query($sql, $node->nid, $node->nid, $vid);
+      }      
+
       // User nodes
       if ($type == DR_USER_TYPE) {
         $sql = "SELECT
                   td.tid AS tid, td.name AS term_name,
                   cck.field_dr_date_value AS date
                 FROM {term_data} td
-                  LEFT JOIN {term_chunk} tc ON td.tid = tc.tid
+                  INNER JOIN {term_chunk} tc ON td.tid = tc.tid
                   INNER JOIN {node} n ON tc.nid = n.nid
                   INNER JOIN {content_type_dr_post} cck ON n.vid = cck.vid
                 WHERE 
