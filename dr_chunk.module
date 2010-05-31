@@ -86,7 +86,7 @@ function dr_chunk_save_item_terms($node, $terms = array()) {
   }
   // If configured to do so, save the term selections to the core taxonomy system (term_node)
   if (DR_CHUNK_SAVE_TO_CORE_TAXONOMY) {
-    taxonomy_node_save($node, $terms);
+    taxonomy_node_save($node, $tids);
   }
 }
 

@@ -193,7 +193,6 @@ function _dr_block_object_activity($type) {
         $date_end = $timestamp;
       }
       $dates[$timestamp]++;
-      $date_end = $timestamp;
     }
 
     return array(
@@ -376,4 +375,115 @@ function _dr_chart_activity_by_date($dates, $date_start, $date_end) {
 
   $out .= theme('fusionchart', $info);
   return $out;
+}
+
+/** ---- Taxonomy activity reports ---- **/
+
+function dr_block_user_taxonomy_activity() {
+  return _dr_block_object_taxonomy_activity(DR_USER_TYPE);
+}
+
+function _dr_block_object_taxonomy_activity($type) {
+  $allowed_types = array(DR_COLLECTION_TYPE, DR_POST_TYPE, DR_USER_TYPE);
+
+  // Only show when viewing a node
+  if (arg(0) == 'node' && is_numeric(arg(1)) && in_array($type, $allowed_types)) {
+    $node = node_load(arg(1));
+
+    // Check if this is a child post of a larger thread and, therefore, has no thread activity
+    if (($node->type == DR_POST_TYPE) && ($node->field_dr_parent[0]['nid'])) {
+      return;
+    }
+
+    $out = '';
+
+    // Get all the vocabularies for the post node type
+    $vocabs = taxonomy_get_vocabularies(DR_POST_TYPE);
+    foreach ($vocabs as $vid => $vocab) {
+      
+      $terms = array();
+      $series = array();
+      $date_start = NULL;
+      $date_end = NULL;
+      
+      // User nodes
+      if ($type == DR_USER_TYPE) {
+        $sql = "SELECT
+                  td.tid AS tid, td.name AS term_name,
+                  cck.field_dr_date_value AS date
+                FROM {term_data} td
+                  LEFT JOIN {term_chunk} tc ON td.tid = tc.tid
+                  INNER JOIN {node} n ON tc.nid = n.nid
+                  INNER JOIN {content_type_dr_post} cck ON n.vid = cck.vid
+                WHERE 
+                  cck.field_dr_user_nid = %d
+                  AND td.vid = %d";
+        $result = db_query($sql, $node->nid, $vid);
+      }
+
+      while ($row = db_fetch_object($result)) {
+        $timestamp = strtotime(format_date($row->date, 'custom', 'Y-m-d'));
+        // Negotiate the start and end date
+        if ($timestamp < $date_start || !$date_start) {
+          $date_start = $timestamp;
+        }
+        if ($timestamp > $date_end || !$date_end) {
+          $date_end = $timestamp;
+        }
+        $dates[$timestamp]++; // Keep a dates array so that later we can keep items in series in sync
+        $series[$row->tid][$timestamp]++;
+        $terms[$row->tid] = $row->term_name;
+      }
+
+      if (!count($series)) {
+        continue;
+      }
+
+      $chart_data = array();
+
+      // Fill out the dates array
+      dr_fill_array_dates($dates, $date_start, $date_end);
+      $dates_clone = array_keys($dates);
+      $date_start = array_shift($dates_clone);
+      $date_end = array_pop($dates_clone);
+
+      // Build the chart data
+      foreach ($series as $tid => $series_dates) {
+        dr_fill_array_dates($series_dates, $date_start, $date_end);
+        dr_filter_array($series_dates, 100);
+        foreach ($series_dates as $key => $value) {
+          $date_nice = format_date($key, 'custom', 'Y-m-d');
+          $chart_data[] = array($terms[$tid], $date_nice, $value);
+        }
+      }
+      
+      // Output the chart
+      $info->data = $chart_data;
+      $info->chart_type = 'Multi-series Line 2D';
+      $info->settings = array(
+        'caption' => t('Activity by term in !vocab', array('!vocab' => $vocab->name)),
+        'animation' => 0,
+        'shownames' => 0,
+        'showValues' => 0,
+        'showAnchors' => 0,
+        'numVDivLines' => 4,
+        'numdivlines' => 4,
+        'showAreaBorder' => 0,
+        'areaAlpha' => 50,
+        'showShadow' => 0,
+        'xAxisName' => format_date($date_start, 'custom', 'Y-m-d') .' to '. format_date($date_end, 'custom', 'Y-m-d'),
+        'yAxisName' => t('Posts'),
+        'decimalPrecision' => 0,
+      );
+      $info->attributes = array();
+      $info->width = 400;
+      $info->height = 300 + (count($terms) * 5);
+      $out .= theme('fusionchart', $info);
+    }
+
+    return array(
+      'subject' => t('Taxonomy activity'),
+      'content' => $out,
+    );
+  }
 }
