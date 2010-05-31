@@ -125,17 +125,15 @@ function dr_block_thread_activity() {
     $date_end = NULL;
     
     $sql = "SELECT
-            MAX(cck.vid),
-            COUNT(DISTINCT(cck.nid)) AS num,
-            FROM_UNIXTIME(cck.field_dr_date_value, '%%Y-%%m-%%d') AS day
-            FROM {content_type_dr_post} cck
-            WHERE cck.field_dr_parent_nid = %d
-            GROUP BY nid, day
-            ORDER BY day";
+            n.nid, n.vid,
+            cck.field_dr_date_value AS date
+            FROM {node} n
+            INNER JOIN {content_type_dr_post} cck ON n.vid = cck.vid
+            WHERE cck.field_dr_parent_nid = %d";
     $result = db_query($sql, $node->nid);
     while ($row = db_fetch_object($result)) {
-      $timestamp = strtotime($row->day);
-      $dates[$timestamp] += $row->num;
+      $timestamp = strtotime(format_date($row->date, 'custom', 'Y-m-d'));
+      $dates[$timestamp]++;
       $date_end = $timestamp;
     }
 
@@ -160,24 +158,23 @@ function dr_block_user_activity() {
     $date_end = NULL;
 
     $sql = "SELECT
-            MAX(cck.vid),
-            COUNT(DISTINCT(cck.nid)) AS num,
-            FROM_UNIXTIME(cck.field_dr_date_value, '%%Y-%%m-%%d') AS day
-            FROM {content_type_dr_post} cck
-            WHERE cck.field_dr_user_nid = %d
-            GROUP BY nid, day
-            ORDER BY day";
+            n.nid, n.vid,
+            cck.field_dr_date_value AS date
+            FROM {node} n
+            INNER JOIN {content_type_dr_post} cck ON n.vid = cck.vid
+            WHERE cck.field_dr_user_nid = %d";
     $result = db_query($sql, $node->nid);
     while ($row = db_fetch_object($result)) {
+      $timestamp = strtotime(format_date($row->date, 'custom', 'Y-m-d'));
       // Negotiate the start and end date
-      $timestamp = strtotime($row->day);
       if ($timestamp < $date_start) {
         $date_start = $timestamp;
       }
       if ($timestamp > $date_end) {
         $date_end = $timestamp;
       }
-      $dates[$timestamp] += $row->num;
+      $dates[$timestamp]++;
+      $date_end = $timestamp;
     }
 
     return array(
