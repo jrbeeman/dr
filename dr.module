@@ -116,6 +116,7 @@ function dr_block_thread_activity() {
     // Only show for top-level dr_user nodes
     $node = node_load(arg(1));
     if (($node->type != 'dr_post') || ($node->field_dr_parent[0]['nid'])) {
+      // This is a child post of a larger thread and, therefore, has no thread activity
       return;
     }
 

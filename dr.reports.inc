@@ -225,46 +225,6 @@ function dr_thread_taxonomy_totals($nid, $vid) {
   return $out;
 }
 
-function dr_user_activity_by_date($uid) {
-  $user = user_load(array('uid' => $uid));
-  $dates = array();
-  $date_start = strtotime(format_date($user->created, 'custom', 'Y-m-d'));
-  $total = 0;
-  
-  // Nodes
-  $sql = "SELECT
-          COUNT(nid) AS num,
-          FROM_UNIXTIME(created, '%%Y-%%m-%%d') AS day
-          FROM {node} n
-          WHERE uid = %d
-          GROUP BY day
-          ORDER BY day";
-  $result = db_query($sql, $uid);
-  while ($row = db_fetch_object($result)) {
-    $timestamp = strtotime($row->day);
-    $dates[$timestamp] += $row->num;
-    $date_end = $timestamp;
-  }
-  
-  // Comments
-  $sql = "SELECT
-          COUNT(cid) AS num,
-          FROM_UNIXTIME(timestamp, '%%Y-%%m-%%d') AS day
-          FROM {comments} c
-          WHERE uid = %d
-          GROUP BY day
-          ORDER BY day";
-  $result = db_query($sql, $uid);
-  while ($row = db_fetch_object($result)) {
-    $timestamp = strtotime($row->day);
-    $dates[$timestamp] += $row->num;
-    if ($timestamp > $date_end) {
-      $date_end = $timestamp;
-    }
-  }
-
-  return dr_chart_activity_by_date($dates, $date_start, $date_end);
-}
 
 function dr_user_taxonomy_activity_by_date($uid, $vid) {
   $user = user_load(array('uid' => $uid));
@@ -425,28 +385,6 @@ function dr_thread_taxonomy_activity_by_date($nid, $vid) {
  
 }
 
-function dr_thread_activity_by_date($nid) {
-  $node = node_load($nid);
-  $date_start = strtotime(format_date($node->created, 'custom', 'Y-m-d'));
-  $dates[$date_start] = 1;
-  $date_end = NULL;
-
-  $sql = "SELECT 
-          COUNT(cid) AS num, 
-          FROM_UNIXTIME(timestamp, '%%Y-%%m-%%d') AS day 
-          FROM {comments} 
-          WHERE nid = %d 
-          GROUP BY day 
-          ORDER BY day";
-  $result = db_query($sql, $nid);
-  while ($row = db_fetch_object($result)) {
-    $timestamp = strtotime($row->day);
-    $dates[$timestamp] += $row->num;
-    $date_end = $timestamp;
-  }
-
-  return dr_chart_activity_by_date($dates, $date_start, $date_end);
-}
 
 function dr_chart_activity_by_date($dates, $date_start, $date_end) {
   // Fill the array out with any empty dates
