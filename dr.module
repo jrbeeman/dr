@@ -198,7 +198,7 @@ function _dr_block_object_activity($type) {
 
     return array(
       'subject' => t('Activity'),
-      'content' => dr_chart_activity_by_date($dates, $date_start, $date_end),
+      'content' => _dr_chart_activity_by_date($dates, $date_start, $date_end),
     );
   }
 }
@@ -299,6 +299,11 @@ function _dr_block_object_taxonomy($type) {
       if (!count($data)) {
         continue;
       }
+      $height = count($chart_data) * 25;
+      if ($height < 200) {
+        $height = 200;
+      }
+
       $info->data = $data;
       $info->chart_type = 'Bar 2D';
       $info->settings = array(
@@ -312,7 +317,7 @@ function _dr_block_object_taxonomy($type) {
       );
       $info->attributes = array();
       $info->width = 400;
-      $info->height = 300;
+      $info->height = $height;
       
       $out .= theme('fusionchart', $info);
     }
@@ -321,4 +326,54 @@ function _dr_block_object_taxonomy($type) {
     'subject' => t('Taxonomy term usage'),
     'content' => $out,
   );
+}
+
+function _dr_chart_activity_by_date($dates, $date_start, $date_end) {
+  // Fill the array out with any empty dates
+  dr_fill_array_dates($dates, $date_start, $date_end);
+  $dates_clone = array_keys($dates);
+  $date_start = array_shift($dates_clone);
+  $date_end = array_pop($dates_clone);
+
+  // Filter the results to a reasonable number ~100
+  dr_filter_array($dates, 100);
+
+  $chart_data = array();
+  $chart_data_total = array();
+  $total = 0;
+  foreach ($dates as $date => $count) {
+    $total += $count;
+    $chart_data[] = array(
+      format_date($date, 'custom', 'Y-m-d'),
+      $count,
+    );
+    $chart_data_total[] = array(
+      format_date($date, 'custom', 'Y-m-d'),
+      $total,
+    );
+  }
+
+  $info->data = $chart_data;
+  $info->chart_type = 'Line 2D';
+  $info->settings = array(
+    'caption' => t('Activity over time'),
+    'animation' => 0,
+    'shownames' => 0,
+    'showValues' => 0,
+    'showAnchors' => 0,
+    'numVDivLines' => 1,
+    'numdivlines' => 1,
+    'lineColor' => 'ff3333',
+    'xAxisName' => format_date($date_start, 'custom', 'Y-m-d') .' to '. format_date($date_end, 'custom', 'Y-m-d'),
+    'yAxisName' => t('Posts'),
+    'decimalPrecision' => 0,
+  );
+  $info->attributes = array(
+    'color' => array('ff3333'),
+  );
+  $info->width = 400;
+  $info->height = 200;
+
+  $out .= theme('fusionchart', $info);
+  return $out;
 }
