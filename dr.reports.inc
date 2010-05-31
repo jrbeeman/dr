@@ -389,6 +389,9 @@ function dr_thread_taxonomy_activity_by_date($nid, $vid) {
 function dr_chart_activity_by_date($dates, $date_start, $date_end) {
   // Fill the array out with any empty dates
   dr_fill_array_dates($dates, $date_start, $date_end);
+  $dates_clone = array_keys($dates);
+  $date_start = array_shift($dates_clone);
+  $date_end = array_pop($dates_clone);
 
   // Filter the results to a reasonable number ~100
   dr_filter_array($dates, 100);
