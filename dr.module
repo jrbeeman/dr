@@ -216,8 +216,7 @@ function dr_block_thread_taxonomy() {
               WHERE (cck.field_dr_parent_nid = %d OR cck.nid = %d)
                 AND td.vid = %d
               GROUP BY tc.tid
-              ORDER BY td.weight ASC
-              LIMIT 10";
+              ORDER BY td.weight ASC";
       $result = db_query($sql, $node->nid, $node->nid, $vid);
       while ($row = db_fetch_object($result)) {
         $data[] = array($row->term_name, $row->num);
@@ -236,11 +235,11 @@ function dr_block_thread_taxonomy() {
         'showValues' => 0,
         'animation' => 0,
         'yAxisMinValue' => 0,
-        'yAxisMaxValue' => $node->comment_count,
+        'yAxisMaxValue' => $count_total,
         'numdivlines' => 1,
       );
       $info->attributes = array();
-      $info->width = '400';
+      $info->width = 400;
       $info->height = 300;
       
       $out .= theme('fusionchart', $info);

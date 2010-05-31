@@ -180,51 +180,6 @@ function dr_report_taxonomy($vid = NULL) {
   return $out;
 }
 
-function dr_thread_taxonomy_totals($nid, $vid) {
-  $node = node_load($nid);
-  $vocabulary = taxonomy_vocabulary_load($vid);
-
-  $sql = "SELECT td.name AS name,
-          COUNT(c.cid) AS num
-          FROM {comments} c
-            LEFT JOIN {term_comment} tc ON c.cid = tc.cid
-            LEFT JOIN {term_data} td ON tc.tid = td.tid
-          WHERE c.nid = %d
-            AND td.vid = %d
-          GROUP BY td.name
-          ORDER BY num DESC
-          LIMIT 10";
-  $result = db_query($sql, $nid, $vid);
-
-  $data = array();
-  $count_total = 0;
-  while ($row = db_fetch_object($result)) {
-    $data[] = array($row->name, $row->num);
-    $count_total += $row->num;
-  }
-
-  if (!count($data)) {
-    return;
-  }
-  $info->data = $data;
-  $info->chart_type = 'Bar 2D';
-  $info->settings = array(
-    'caption' => t('Terms in !vocab', array('!vocab' => $vocabulary->name)),
-    'shownames' => 1,
-    'showValues' => 0,
-    'animation' => 0,
-    'yAxisMinValue' => 0,
-    'yAxisMaxValue' => $node->comment_count,
-    'numdivlines' => 1,
-  );
-  $info->attributes = array();
-  $info->width = '400';
-  $info->height = 300;
-
-  $out .= theme('fusionchart', $info);
-  return $out;
-}
-
 
 function dr_user_taxonomy_activity_by_date($uid, $vid) {
   $user = user_load(array('uid' => $uid));
