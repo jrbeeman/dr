@@ -187,3 +187,67 @@ function dr_block_user_activity() {
     );
   }
 }
+
+function dr_block_thread_taxonomy() {
+  if (arg(0) == 'node' && is_numeric(arg(1))) {
+    // Only show for top-level dr_user nodes
+    $node = node_load(arg(1));
+    if (($node->type != 'dr_post') || ($node->field_dr_parent[0]['nid'])) {
+      // This is a child post of a larger thread and, therefore, has no thread activity
+      return;
+    }
+
+    $out = '';
+
+    // Get all the vocabularies for the post node type
+    $vocabs = taxonomy_get_vocabularies($node->type);
+    foreach ($vocabs as $vid => $vocab) {
+      $info = new stdClass();
+      $data = array();
+      $count_total = 0;
+      $sql = "SELECT
+                td.tid AS tid, 
+                td.name AS term_name,
+                COUNT(tc.tid) AS num
+              FROM term_chunk tc
+                INNER JOIN {content_type_dr_post} cck ON tc.nid = cck.nid
+                INNER JOIN {node} n ON n.vid = cck.vid
+                INNER JOIN {term_data} td ON tc.tid = td.tid
+              WHERE (cck.field_dr_parent_nid = %d OR cck.nid = %d)
+                AND td.vid = %d
+              GROUP BY tc.tid
+              ORDER BY td.weight ASC
+              LIMIT 10";
+      $result = db_query($sql, $node->nid, $node->nid, $vid);
+      while ($row = db_fetch_object($result)) {
+        $data[] = array($row->term_name, $row->num);
+        $count_total += $row->num;
+      }
+
+      // Don't render a chart if the data is empty
+      if (!count($data)) {
+        continue;
+      }
+      $info->data = $data;
+      $info->chart_type = 'Bar 2D';
+      $info->settings = array(
+        'caption' => t('Terms in !vocab', array('!vocab' => $vocab->name)),
+        'shownames' => 1,
+        'showValues' => 0,
+        'animation' => 0,
+        'yAxisMinValue' => 0,
+        'yAxisMaxValue' => $node->comment_count,
+        'numdivlines' => 1,
+      );
+      $info->attributes = array();
+      $info->width = '400';
+      $info->height = 300;
+      
+      $out .= theme('fusionchart', $info);
+    }
+  }
+  return array(
+    'subject' => t('Thread taxonomy term usage'),
+    'content' => $out,
+  );
+}
