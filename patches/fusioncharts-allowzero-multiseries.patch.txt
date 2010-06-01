@@ -1,5 +1,5 @@
 --- /Users/jrbeeman/Downloads/fusioncharts/fusioncharts.module	2009-04-21 03:19:23.000000000 -0700
-+++ ./sites/all/modules/fusioncharts/fusioncharts.module	2010-05-31 15:37:30.000000000 -0700
++++ ./fusioncharts.module	2010-05-31 15:37:30.000000000 -0700
 @@ -338,7 +338,7 @@ function _fusioncharts_data_multi($data,
          $str_xml .= "<dataset seriesName='". fusioncharts_entities(trim($series[$i])) ."' $color>\n";
          for ($j=$i; $j<($i+$category_count); $j++) {
