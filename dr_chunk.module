@@ -78,6 +78,18 @@ function dr_chunk_save_item_terms($node, $terms = array()) {
   // Delete existing terms
   $sql = "DELETE FROM {term_chunk} WHERE nid = %d";
   db_query($sql, $node->nid);
+  // Get the parent terms, if there are any
+  foreach ($terms as $term) {
+    $parents = taxonomy_get_parents($term['tid']);
+    foreach ($parents as $parent_tid => $parent) {
+      $new_term = array(
+        'tid' => $parent_tid,
+        'html' => $term['html'],
+        'text' => $term['text'],
+      );
+      $terms[] = $new_term;
+    }
+  }
   // Add new terms
   $sql = "INSERT INTO {term_chunk} (nid, tid, `html`, `text`) VALUES (%d, %d, '%s', '%s')";
   foreach ($terms as $term) {
