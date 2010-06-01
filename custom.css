@@ -117,3 +117,10 @@ ul.links li.first
 {
     margin-left:0;
 }
+
+#panel-dr_collection-reports .pane-content,
+#panel-dr_post-reports .pane-content,
+#panel-dr_user-reports .pane-content
+{
+    text-align:center;
+}
