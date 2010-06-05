@@ -124,3 +124,13 @@ ul.links li.first
 {
     text-align:center;
 }
+
+div.view-filters
+{
+    padding:0 10px;
+}
+
+#content div.view-filters div.form-item
+{
+    margin-bottom:10px;
+}
