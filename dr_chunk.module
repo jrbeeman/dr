@@ -26,7 +26,7 @@ function dr_chunk_wysiwyg_include_directory($type) {
  * Implementation of hook_nodeapi().
  */
 function dr_chunk_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
-  if ($op == 'prepare') {
+  if ($op == 'prepare' || $op == 'load') {
     // Showing the node, so load up all terms and prep the JS interface
     dr_chunk_prepare_tagging($node->type);
   }
