@@ -61,6 +61,7 @@ Drupal.dr_chunk.prepare_node = function(instanceId) {
         // From: http://www.shawnolson.net/a/503/altering-css-class-attributes-with-javascript.html
         // Add local stylesheet to the iframe
         var out = '<style type="text/css">';
+        out += '.content { font: 13px/20px "Helvetica Neue",Helvetica,Arial,sans-serif } ';
         for (index in terms) {
             var term = terms[index];
             var className = 'taxonomy-term-'+ term.tid;
