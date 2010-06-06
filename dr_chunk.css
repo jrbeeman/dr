@@ -2,7 +2,7 @@
     position:fixed;
     top:50px;
     width:180px;
-    max-height:400px;
+    max-height:80%;
     overflow:auto;
     font-size:11px;
     background: url('/sites/all/themes/singular/images/mask.png') repeat scroll 0 0;
