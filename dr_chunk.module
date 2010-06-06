@@ -139,19 +139,26 @@ function theme_dr_chunk_term_selector($terms) {
   foreach ($terms as $tid => $term) {
     $vocabs[$term['vid']] = $term['vocab_name'];
   }
-  $out = '<div id="dr-chunk-menu"><div id="dr-chunk-menu-inner"><dl>';
+  $out = '<div id="dr-chunk-menu"><div id="dr-chunk-menu-inner"><ul>';
   foreach ($vocabs as $vid => $vocab_name) {
-    $out .= '<dt>'. $vocab_name .'</dt>';
+    $out .= '<li><span id="dr-chunk-vocab-'. $vid .'" class="dr-chunk-vocab-name">'. $vocab_name .'</span>';
+    $out .= '<ul>';
     foreach ($terms as $tid => $term ) {
       if ($term['vid'] == $vid) {
-        $out .= '<dd><a href="#">';
-        $out .= '<span id="taxonomy-term-'. $term['tid'] .'" style="background-color:'. $term['background'] .'; color: '. $term['foreground'] .';">'. $term['term_name'] .'</span>';
-        $out .= '</a></dd>';
+        $out .= '<li><a href="#">';
+        $out .= '<span id="taxonomy-term-'. $term['tid'] .'" style="background-color:'. $term['background'] .'; color: '. $term['foreground'] .';">';
+        if ($term['parent']) {
+          $out .= '- ';
+        }
+        $out .= $term['term_name'] .'</span>';
+        $out .= '</a></li>';
       }
     }
+    $out .= '</ul>';
+    $out .= '</li>';
   }
-  $out .= '</dl></div>';
-  $out .= '<div id="dr-chunk-menu-slider" style="padding:2px; text-align:right;"><a href="#">'. t('Show / Hide Tags') .'</a></div>';
+  $out .= '</ul></div>';
+  $out .= '<div id="dr-chunk-menu-slider"><a href="#">'. t('Show / Hide Tags') .'</a></div>';
   $out .= '</div>';
   return $out;
 }
@@ -161,6 +168,7 @@ function theme_dr_chunk_term_selector($terms) {
  */
 function dr_chunk_add_js_css() {
   $path = drupal_get_path('module', 'dr');
+  drupal_add_js($path .'/lib/jquery.cookie.js', 'module');
   drupal_add_js($path .'/dr_chunk.js', 'module');
   drupal_add_css($path .'/dr_chunk.css');
 }
@@ -254,10 +262,18 @@ function dr_chunk_term_colors($tid) {
  */
 function dr_chunk_all_terms() {
   $terms = array();
-  $sql = "SELECT tc.tid, tc.background, tc.foreground, td.name AS term_name, v.name AS vocab_name, v.vid
+  $sql = "SELECT 
+            DISTINCT(tc.tid) AS tid, 
+            tc.background AS background,
+            tc.foreground AS foreground, 
+            td.name AS term_name,
+            th.parent AS parent, 
+            v.name AS vocab_name, 
+            v.vid
           FROM {term_color} tc
-          LEFT JOIN {term_data} td ON tc.tid = td.tid
-          LEFT JOIN {vocabulary} v ON td.vid = v.vid
+            LEFT JOIN {term_data} td ON tc.tid = td.tid
+            LEFT JOIN {vocabulary} v ON td.vid = v.vid
+            LEFT JOIN {term_hierarchy} th ON tc.tid = th.tid
           ORDER BY v.weight, v.name, td.weight, td.name";
   $result = db_query($sql, $node_type);
   while ($row = db_fetch_array($result)) {

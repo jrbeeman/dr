@@ -40,10 +40,23 @@ Drupal.dr_chunk.prepare_node = function(instanceId) {
             return false;
         });
         $('#dr-chunk-menu-slider a').bind('click', function() {
-            $('#dr-chunk-menu-inner').slideToggle();
+            $('#dr-chunk-menu-inner').slideToggle(function() {
+              $.cookie('dr-chunk-slider-state', $(this).css('display'));
+            });
             return false;
         });
-        
+        $('#dr-chunk-menu .dr-chunk-vocab-name').bind('click', function() {
+          $(this).siblings('ul').slideToggle(function() {
+            $.cookie($(this).siblings('span.dr-chunk-vocab-name').attr('id'), $(this).css('display'));
+          });
+        });
+
+        // Set the initial state of sliders
+        $('#dr-chunk-menu-inner').css('display', $.cookie('dr-chunk-slider-state'));
+        $('#dr-chunk-menu .dr-chunk-vocab-name').siblings('ul').each(function() {
+          $(this).css('display', $.cookie($(this).siblings('span.dr-chunk-vocab-name').attr('id')));
+        });       
+ 
         // Inject the CSS needed for rendering into the iframe
         // From: http://www.shawnolson.net/a/503/altering-css-class-attributes-with-javascript.html
         // Add local stylesheet to the iframe
