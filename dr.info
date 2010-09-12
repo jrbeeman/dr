@@ -1,3 +1,4 @@
 name = 'Decoder Ring'
 description = 'Provides various site-specific changes.'
-core = 6.x
+package = "Decoder Ring"
+core = "6.x"

@@ -1,3 +1,4 @@
 name = 'Decoder Ring - Chunk Tagging'
 description = 'Text chunk tagging utilities'
-core = 6.x
+package = "Decoder Ring"
+core = "6.x"
