@@ -1,0 +1,5 @@
+name = "Decoder Ring Solr Integration"
+description = "Various reports and views that rely on Solr"
+dependencies[] = apachesolr
+package = "Decoder Ring"
+core = "6.x"

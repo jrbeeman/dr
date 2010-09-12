@@ -1,0 +1,10 @@
+form #edit-type-wrapper,
+form #edit-vid-wrapper {
+    float:left;
+    margin-right:10px;
+}
+
+form #edit-submit {
+    clear:both;
+    display:block;
+}

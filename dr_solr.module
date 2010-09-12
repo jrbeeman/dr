@@ -1,0 +1,112 @@
+<?php
+
+/**
+ * Implementation of hook_menu().
+ */
+function dr_solr_menu() {
+  $items['dr/solr/taxonomy'] = array(
+    'title'            => 'DR: Word match report',
+    'page callback'    => 'dr_solr_taxonomy_word_match_report',
+    'access arguments' => array('administer search'),
+  );
+  return $items;
+}
+
+function dr_solr_taxonomy_word_match_report_form() {
+  drupal_add_css(drupal_get_path('module', 'dr_solr') .'/dr_solr.css');
+  // Node types
+  $types = node_get_types('names');
+  $type_default = is_string(arg(3)) ? arg(3) : 'All';
+  // Vocabularies
+  $vocabularies = taxonomy_get_vocabularies();
+  $vocab_default = is_numeric(arg(4)) ? arg(4) : NULL;
+  $options = array();
+  foreach ($vocabularies as $vocab) {
+    $options[$vocab->vid] = $vocab->name;
+  }
+
+  $form = array();
+  $form['filters'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Filters'),
+  );
+  $form['filters']['type'] = array(
+    '#type' => 'select',
+    '#title' => t('Content type'),
+    '#options' => array('All' => '<Any>') + $types,
+    //'#description' => t('Select a content type to filter by nodes only of that type.'),
+    '#default_value' => $type_default,
+  );
+  $form['filters']['vid'] = array(
+    '#type' => 'select',
+    '#title' => t('Vocabulary'),
+    '#options' => $options,
+    //'#description' => t('Select a vocabulary from which terms should be used to search for frequency of occurence in posts.'),
+    '#default_value' => $vocab_default,
+  );
+  $form['filters']['buttons']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Search'),
+  );
+  return $form;
+}
+
+function dr_solr_taxonomy_word_match_report_form_submit($form, &$form_state) {
+  if ($form_state['values']['vid']) {
+    $form_state['redirect'] = 'dr/solr/taxonomy/'. $form_state['values']['type'] .'/'. $form_state['values']['vid'];
+  }
+}
+
+function dr_solr_taxonomy_word_match_report() {
+  $out = '';
+  $out .= drupal_get_form('dr_solr_taxonomy_word_match_report_form');
+
+  $type = arg(3);
+  $vid = arg(4);
+
+  if ($vid) {
+    $header = array(
+      t('Term'),
+      t('Number of posts'),
+      t('Operations'),
+    );
+    $rows = array();
+
+    $tree = taxonomy_get_tree($vid);
+    foreach ($tree as $term) {
+      if ($term->name) {
+        $query = apachesolr_drupal_query($term->name);
+        if ($type !== 'All') {
+          $query->add_filter('type', $type);
+        }
+        $params = array(
+          'fl' => 'id,nid',
+          'rows' => variable_get('apachesolr_rows', 1),
+          'facet' => 'true',
+          'facet.mincount' => 1,
+        );
+
+        $link_filters = array();
+        $link_filters[] = 'vid:'. $term->vid;
+        if ($type !== 'All') {
+          $link_filters[] = 'type:'. $type;
+        }
+        $options = array('query' => array());
+        $options['query']['filters'] = implode(' ', $link_filters);
+        $options['query']['retain-filters'] = 1;
+        $url = 'search/apachesolr_search/'. $term->name;
+
+        list($final_query, $response) = apachesolr_do_query('dr_solr', $query, $params);
+        $rows[] = array(
+          str_repeat('-', $term->depth) . l($term->name, $url, $options), 
+          $response->response->numFound,
+          l('edit', 'admin/content/taxonomy/edit/term/'. $term->tid),
+        );
+      }
+    }
+    if (count($rows)) {
+      $out .= theme('table', $header, $rows, array('id' => 'dr-solr-taxonomy'));
+    }
+  }
+  return $out;
+}
