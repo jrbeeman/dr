@@ -106,7 +106,8 @@ p
     background:#eee;
 }
 
-h2.pane-title 
+h2.pane-title,
+.view-og-my-collections h3
 {
     font-size:24px;
     font-weight:bold;
@@ -145,3 +146,4 @@ div.view-filters
 {
     margin-bottom:10px;
 }
+
