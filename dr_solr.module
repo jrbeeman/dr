@@ -104,7 +104,6 @@ function dr_solr_taxonomy_word_match_report() {
 
         $link_filters = array();
         $link_filters[] = 'is_cck_field_dr_collection:'. $collection;
-        $link_filters[] = 'vid:'. $term->vid;
         if ($type !== 'All') {
           $link_filters[] = 'type:'. $type;
         }
