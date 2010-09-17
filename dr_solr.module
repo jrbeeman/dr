@@ -14,9 +14,10 @@ function dr_solr_menu() {
 
 function dr_solr_taxonomy_word_match_report_form() {
   drupal_add_css(drupal_get_path('module', 'dr_solr') .'/dr_solr.css');
-  $collection_default = is_numeric(arg(3)) ? arg(3) : 'All';
-  $type_default = is_string(arg(4)) ? arg(4) : 'dr_post';
-  $vocab_default = is_numeric(arg(5)) ? arg(5) : NULL;
+  $collection_default = $_GET['collection'] ? $_GET['collection'] : 'All';
+  $type_default = $_GET['type'] ? $_GET['type'] : 'dr_post';
+  $vocab_default = $_GET['vid'] ? $_GET['vid'] : NULL;
+  $exact_default = $_GET['exact'] ? $_GET['exact'] : FALSE;
 
   // Collections
   $sql = "SELECT nid, title FROM {node} WHERE type = 'dr_collection' AND status = 1 ORDER BY title ASC";
@@ -60,6 +61,11 @@ function dr_solr_taxonomy_word_match_report_form() {
     //'#description' => t('Select a vocabulary from which terms should be used to search for frequency of occurence in posts.'),
     '#default_value' => $vocab_default,
   );
+  $form['filters']['exact'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Exact match'),
+    '#default_value' => $exact_default,
+  );
   $form['filters']['buttons']['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Search'),
@@ -69,7 +75,13 @@ function dr_solr_taxonomy_word_match_report_form() {
 
 function dr_solr_taxonomy_word_match_report_form_submit($form, &$form_state) {
   if ($form_state['values']['vid']) {
-    $form_state['redirect'] = 'dr/solr/taxonomy/'. $form_state['values']['collection'] .'/'. $form_state['values']['type'] .'/'. $form_state['values']['vid'];
+    $query = array(
+      'collection' => $form_state['values']['collection'],
+      'type' => $form_state['values']['type'],
+      'vid' => $form_state['values']['vid'],
+      'exact' => $form_state['values']['exact'],
+    );
+    $form_state['redirect'] = array('dr/solr/taxonomy/', $query);
   }
 }
 
@@ -77,9 +89,10 @@ function dr_solr_taxonomy_word_match_report() {
   $out = '';
   $out .= drupal_get_form('dr_solr_taxonomy_word_match_report_form');
 
-  $collection = arg(3);
-  $type = arg(4);
-  $vid = arg(5);
+  $collection = $_GET['collection'];
+  $type = $_GET['type'];
+  $vid = $_GET['vid'];
+  $exact = $_GET['exact'];
 
   if ($vid) {
     $header = array(
@@ -91,7 +104,11 @@ function dr_solr_taxonomy_word_match_report() {
     $tree = taxonomy_get_tree($vid);
     foreach ($tree as $term) {
       if ($term->name) {
-        $query = apachesolr_drupal_query($term->name);
+        $query_string = $term->name;
+        if ($exact) {
+          $query_string = '"'. $query_string .'"';
+        }
+        $query = apachesolr_drupal_query($query_string);
         if ($type !== 'All') {
           $query->add_filter('type', $type);
         }
@@ -110,7 +127,7 @@ function dr_solr_taxonomy_word_match_report() {
         $options = array('query' => array());
         $options['query']['filters'] = implode(' ', $link_filters);
         $options['query']['retain-filters'] = 1;
-        $url = 'search/apachesolr_search/'. $term->name;
+        $url = 'search/apachesolr_search/'. $query_string;
 
         list($final_query, $response) = apachesolr_do_query('dr_solr', $query, $params);
         $rows[] = array(
