@@ -1,0 +1,11 @@
+--- ./sites/all/themes/singular/page.tpl.php	2010-09-09 01:41:23.468111520 +0000
++++ ./sites/all/themes/singular/page.tpl.php	2010-09-17 17:19:47.876678726 +0000
+@@ -3,7 +3,7 @@
+   <head>
+     <?php print $head ?>
+     <?php print $styles ?>
+-
++    <link type="text/css" rel="stylesheet" media="screen" href="/sites/all/modules/dr/custom.css" />
+     <!--[if lt IE 7]>
+     <style type="text/css" media="all"><?php print $styles_ie6 ?></style>
+     <![endif]-->

@@ -1,0 +1,10 @@
+--- ./sites/all/themes/seven/page.tpl.php	2010-09-17 17:19:47.916707133 +0000
++++ ./sites/all/themes/seven/page.tpl.php	2010-09-09 01:41:37.208114433 +0000
+@@ -7,6 +7,7 @@
+ 
+   <?php print $head; ?>
+   <?php print $styles; ?>
++  <link type="text/css" rel="stylesheet" media="screen" href="/sites/all/modules/dr/custom.css" />
+   <!--[if lte IE 7]>
+     <style type="text/css" media="all">@import "<?php echo $base_path . path_to_theme() ?>/ie.css";</style>
+   <![endif]-->
