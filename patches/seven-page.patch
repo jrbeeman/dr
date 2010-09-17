@@ -1,4 +1,4 @@
---- ./sites/all/themes/seven/page.tpl.php	2010-09-17 17:19:47.916707133 +0000
+--- ./page.tpl.php	2010-09-17 17:19:47.916707133 +0000
 +++ ./sites/all/themes/seven/page.tpl.php	2010-09-09 01:41:37.208114433 +0000
 @@ -7,6 +7,7 @@
  

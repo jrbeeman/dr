@@ -1,4 +1,4 @@
---- ./sites/all/themes/singular/page.tpl.php	2010-09-09 01:41:23.468111520 +0000
+--- ./page.tpl.php	2010-09-09 01:41:23.468111520 +0000
 +++ ./sites/all/themes/singular/page.tpl.php	2010-09-17 17:19:47.876678726 +0000
 @@ -3,7 +3,7 @@
    <head>
