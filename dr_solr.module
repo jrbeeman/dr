@@ -7,7 +7,7 @@ function dr_solr_menu() {
   $items['dr/solr/taxonomy'] = array(
     'title'            => 'DR: Word match report',
     'page callback'    => 'dr_solr_taxonomy_word_match_report',
-    'access arguments' => array('administer search'),
+    'access arguments' => array('search content'),
   );
   return $items;
 }
@@ -15,9 +15,19 @@ function dr_solr_menu() {
 function dr_solr_taxonomy_word_match_report_form() {
   drupal_add_css(drupal_get_path('module', 'dr_solr') .'/dr_solr.css');
   $collection_default = $_GET['collection'] ? $_GET['collection'] : 'All';
+  $thread_default = $_GET['thread'] ? $_GET['thread'] : 'All';
   $type_default = $_GET['type'] ? $_GET['type'] : 'dr_post';
   $vocab_default = $_GET['vid'] ? $_GET['vid'] : NULL;
   $exact_default = $_GET['exact'] ? $_GET['exact'] : FALSE;
+
+  // Threads
+  $threads_view = views_get_view('threads_by_collection');
+  $threads_view->execute();
+  $thread_options = array();
+  foreach ($threads_view->result as $row) {
+    $title = ($row->node_node_data_field_dr_collection_title .': '. $row->node_title);
+    $thread_options[$row->nid] = $title;
+  }
 
   // Collections
   $sql = "SELECT nid, title FROM {node} WHERE type = 'dr_collection' AND status = 1 ORDER BY title ASC";
@@ -46,6 +56,12 @@ function dr_solr_taxonomy_word_match_report_form() {
     '#title' => t('Collection'),
     '#options' => array('All' => '<Any>') + $collection_options,
     '#default_value' => $collection_default,
+  );
+  $form['filters']['thread'] = array(
+    '#type' => 'select',
+    '#title' => t('Thread'),
+    '#options' => array('All' => '<Any>') + $thread_options,
+    '#default_value' => $thread_default,
   );
   $form['filters']['type'] = array(
     '#type' => 'select',
@@ -77,6 +93,7 @@ function dr_solr_taxonomy_word_match_report_form_submit($form, &$form_state) {
   if ($form_state['values']['vid']) {
     $query = array(
       'collection' => $form_state['values']['collection'],
+      'thread' => $form_state['values']['thread'],
       'type' => $form_state['values']['type'],
       'vid' => $form_state['values']['vid'],
       'exact' => $form_state['values']['exact'],
@@ -90,6 +107,7 @@ function dr_solr_taxonomy_word_match_report() {
   $out .= drupal_get_form('dr_solr_taxonomy_word_match_report_form');
 
   $collection = $_GET['collection'];
+  $thread = $_GET['thread'];
   $type = $_GET['type'];
   $vid = $_GET['vid'];
   $exact = $_GET['exact'];
@@ -109,8 +127,16 @@ function dr_solr_taxonomy_word_match_report() {
           $query_string = '"'. $query_string .'"';
         }
         $query = apachesolr_drupal_query($query_string);
+        
+        // Build the solr query
         if ($type !== 'All') {
           $query->add_filter('type', $type);
+        }
+        if ($collection !== 'All') {
+          $query->add_filter('is_cck_field_dr_collection', $collection);
+        }
+        if ($thread !== 'All') {
+          $query->add_filter('is_cck_field_dr_parent', $thread);
         }
         $params = array(
           'fl' => 'id,nid',
@@ -119,8 +145,14 @@ function dr_solr_taxonomy_word_match_report() {
           'facet.mincount' => 1,
         );
 
+        // Build the links
         $link_filters = array();
-        $link_filters[] = 'is_cck_field_dr_collection:'. $collection;
+        if ($collection !== 'All') {
+          $link_filters[] = 'is_cck_field_dr_collection:'. $collection;
+        }
+        if ($thread !== 'All') {
+          $link_filters[] = 'is_cck_field_dr_parent:'. $thread;
+        }
         if ($type !== 'All') {
           $link_filters[] = 'type:'. $type;
         }
